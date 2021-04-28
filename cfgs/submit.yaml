@@ -1,0 +1,20 @@
+# Number of gpus to request on each node
+num_gpus: 1
+vram: 12GB
+# memory allocated per GPU in GB
+mem_per_gpu: 20
+# Number of nodes to request
+nodes: 1
+# Duration of the job
+timeout: 4320
+# Job dir. Leave empty for automatic.
+job_dir: ''
+# Use to run jobs locally. ('debug', 'local', 'slurm')
+cluster: debug
+# Partition. Leave empty for automatic.
+slurm_partition: ''
+# Constraint. Leave empty for automatic.
+slurm_constraint: ''
+slurm_comment: ''
+slurm_gres: ''
+slurm_exclude: ''

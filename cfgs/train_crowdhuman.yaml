@@ -1,0 +1,12 @@
+dataset: mot_crowdhuman
+crowdhuman_train_split: train_val
+train_split: null
+val_split: mot17_train_coco
+
+resume: models/r50_deformable_detr-checkpoint.pth
+
+lr: 0.0001
+lr_backbone: 0.00001
+
+epochs: 50
+lr_drop: 20

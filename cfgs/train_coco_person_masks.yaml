@@ -1,0 +1,10 @@
+dataset: coco_person
+
+resume: models/mot17_train_pretrain_CH_deformable/checkpoint.pth
+load_mask_head_from_model: models/detr-r50-panoptic-00ce5173.pth
+freeze_detr: true
+masks: true
+
+lr: 0.0001
+lr_drop: 50
+epochs: 50

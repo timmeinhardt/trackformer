@@ -1,0 +1,4 @@
+focal_loss: true
+focal_alpha: 0.25
+cls_loss_coef: 2.0
+set_cost_class: 2.0

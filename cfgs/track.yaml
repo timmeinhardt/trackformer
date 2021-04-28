@@ -1,0 +1,44 @@
+output_dir: null
+verbose: false
+seed: 666
+
+obj_detect_checkpoint_file: models/mot17_train_deformable_private/checkpoint.pth
+
+interpolate: False
+# if available load tracking results and only evaluate
+load_results_dir: null
+
+# dataset (look into src/datasets/tracking/factory.py)
+dataset_name: MOT17-ALL-ALL
+data_root_dir: data
+
+# [False, 'debug', 'pretty']
+# compile video with: `ffmpeg -f image2 -framerate 15 -i %06d.jpg -vcodec libx264 -y movie.mp4 -vf scale=320:-1`
+write_images: False
+# Maps are only visualized if write_images is True
+generate_attention_maps: False
+
+# track, evaluate and write images only for a range of frames (in float fraction)
+frame_range:
+    start: 0.0
+    end: 1.0
+
+tracker_cfg:
+    # [False, 'center_distance', 'min_iou_0_5']
+    public_detections: False
+    # score threshold for detections
+    detection_obj_score_thresh: 0.9
+    # score threshold for keeping the track alive
+    track_obj_score_thresh: 0.8
+    # NMS threshold for detection
+    detection_nms_thresh: 0.9
+    # NMS theshold while tracking
+    track_nms_thresh: 0.9
+    # motion model settings
+    # How many timesteps inactive tracks are kept and cosidered for reid
+    inactive_patience: -1
+    # How similar do image and old track need to be to be considered the same person
+    reid_sim_threshold: 0.0
+    reid_sim_only: false
+    reid_score_thresh: 0.8
+    reid_greedy_matching: false

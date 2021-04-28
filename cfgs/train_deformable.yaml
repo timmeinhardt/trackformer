@@ -1,0 +1,5 @@
+deformable: true
+backbone: resnet50
+num_feature_levels: 4
+num_queries: 300
+dim_feedforward: 1024

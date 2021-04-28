@@ -1,0 +1,12 @@
+dataset: mot
+mot_path: data/MOTS20
+train_split: mots20_train_coco
+val_split: mots20_train_coco
+
+resume: models/mot17_train_pretrain_CH_deformable_with_coco_person_masks/checkpoint.pth
+masks: true
+lr: 0.00001
+lr_backbone: 0.000001
+
+epochs: 40
+lr_drop: 40

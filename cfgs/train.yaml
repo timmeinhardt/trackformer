@@ -1,0 +1,126 @@
+lr: 0.0001
+lr_backbone_names: ['backbone.0']
+lr_backbone: 0.00001
+lr_linear_proj_names: ['reference_points', 'sampling_offsets']
+lr_linear_proj_mult: 0.1
+lr_track: 0.0001
+batch_size: 1
+weight_decay: 0.0001
+epochs: 50
+lr_drop: 40
+# gradient clipping max norm
+clip_max_norm: 0.1
+# Deformable DETR
+deformable: false
+with_box_refine: false
+two_stage: false
+# Model parameters
+freeze_detr: false
+load_mask_head_from_model: null
+# Backbone
+# Name of the convolutional backbone to use. ('resnet50', 'resnet101')
+backbone: resnet101
+# If true, we replace stride with dilation in the last convolutional block (DC5)
+dilation: false
+# Type of positional embedding to use on top of the image features. ('sine', 'learned')
+position_embedding: sine
+# Number of feature levels the encoder processes from the backbone
+num_feature_levels: 1
+# Transformer
+# Number of encoding layers in the transformer
+enc_layers: 6
+# Number of decoding layers in the transformer
+dec_layers: 6
+# Intermediate size of the feedforward layers in the transformer blocks
+dim_feedforward: 2048
+# Size of the embeddings (dimension of the transformer)
+hidden_dim: 256
+# Dropout applied in the transformer
+dropout: 0.1
+# Number of attention heads inside the transformer's attentions
+nheads: 8
+# Number of object queries
+num_queries: 100
+pre_norm: false
+dec_n_points: 4
+enc_n_points: 4
+# Tracking
+tracking: false
+# In addition to detection also run tracking evaluation with default configuration from `cfgs/track.yaml`
+tracking_eval: true
+# Range of possible random previous frames
+track_prev_frame_range: 0
+track_prev_frame_rnd_augs: 0.01
+track_query_false_positive_prob: 0.1
+track_query_false_negative_prob: 0.4
+track_query_false_positive_eos_weight: true
+track_query_noise: 0.0
+track_attention: false
+# Segmentation
+masks: false
+# Matcher
+# Class coefficient in the matching cost
+set_cost_class: 1.0
+# L1 box coefficient in the matching cost
+set_cost_bbox: 5.0
+# giou box coefficient in the matching cost
+set_cost_giou: 2.0
+# Loss
+# Disables auxiliary decoding losses (loss at each layer)
+aux_loss: true
+mask_loss_coef: 1.0
+dice_loss_coef: 1.0
+cls_loss_coef: 1.0
+bbox_loss_coef: 5.0
+giou_loss_coef: 2
+# Relative classification weight of the no-object class
+eos_coef: 0.1
+focal_loss: false
+focal_alpha: 0.25
+# Dataset
+dataset: coco
+train_split: train
+val_split: val
+coco_path: data/coco_2017
+coco_panoptic_path: null
+mot_path: data/MOT17
+crowdhuman_path: data/CrowdHuman
+# allows for joint training of mot and crowdhuman with
+# the `mot_crowdhuman` dataset
+crowdhuman_train_split: null
+coco_and_crowdhuman_prev_frame_rnd_augs: 0.05
+img_transform:
+  max_size: 1333
+  val_width: 800
+# Miscellaneous
+# path where to save, empty for no saving
+output_dir: ''
+# device to use for training / testing
+device: cuda
+seed: 42
+# resume from checkpoint
+resume: ''
+# resume optimization from checkpoint
+resume_optim: false
+# resume Visdom visualization
+resume_vis: false
+start_epoch: 1
+eval_only: false
+eval_train: false
+num_workers: 2
+val_interval: 1
+debug: false
+# epoch interval for model saving. if 0 only save last and best models
+save_model_interval: 0
+# distributed training parameters
+# number of distributed processes
+world_size: 1
+# url used to set up distributed training
+dist_url: env://
+# visualization parameters
+# Visdom port.
+vis_port: 8090
+# Visdom server URL.
+vis_server: http://localhost
+no_vis: false
+vis_and_log_interval: 50

@@ -1,0 +1,4 @@
+tracking: true
+tracking_eval: true
+track_prev_frame_range: 5
+track_query_false_positive_eos_weight: true
