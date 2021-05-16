@@ -197,16 +197,16 @@ def train(args: Namespace) -> None:
 
                 print(f"Load {k} {tuple(v.shape)} from resume model "
                       f"{tuple(checkpoint_value.shape)}.")
-            # elif 'class_embed' in k:
-            #     checkpoint_value = checkpoint_state_dict[k]
-            #     # no-object class
-            #     resume_value = checkpoint_value.clone()
-            #     # no-object class
-            #     # resume_value[:-2] = checkpoint_value[1:-1].clone()
-            #     resume_value[:-1] = checkpoint_value[1:].clone()
-            #     resume_value[-2] = checkpoint_value[0].clone()
-            #     print(f"Load {k} {tuple(v.shape)} from resume model and "
-            #           "shift class embed neurons to start with label=0 at neuron=0.")
+            elif args.focal_loss and 'class_embed' in k:
+                checkpoint_value = checkpoint_state_dict[k]
+                # no-object class
+                resume_value = checkpoint_value.clone()
+                # no-object class
+                # resume_value[:-2] = checkpoint_value[1:-1].clone()
+                resume_value[:-1] = checkpoint_value[1:].clone()
+                resume_value[-2] = checkpoint_value[0].clone()
+                print(f"Load {k} {tuple(v.shape)} from resume model and "
+                      "shift class embed neurons to start with label=0 at neuron=0.")
             else:
                 resume_value = checkpoint_state_dict[k]
 
