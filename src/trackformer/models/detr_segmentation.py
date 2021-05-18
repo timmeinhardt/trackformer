@@ -41,19 +41,20 @@ class DETRSegmBase(nn.Module):
     def forward(self, samples: NestedTensor, targets: list = None):
         out, targets, features, memory, hs = super().forward(samples, targets)
 
-        batch_size = features[-1].tensors.shape[0]
-        src, mask = features[-1].decompose()
-
         if isinstance(memory, list):
-            src = self.input_proj[-1](src)
-            # src = self.input_proj[-2](src)
+            src, mask = features[-2].decompose()
+            batch_size = src.shape[0]
+
+            src = self.input_proj[-3](src)
             mask = F.interpolate(mask[None].float(), size=src.shape[-2:]).to(torch.bool)[0]
 
             # fpns = [memory[2], memory[1], memory[0]]
-            fpns = [features[2].tensors, features[1].tensors, features[0].tensors]
-            memory = memory[-1]
-            # memory = memory[-2]
+            fpns = [features[-2].tensors, features[-3].tensors, features[-4].tensors]
+            memory = memory[-3]
         else:
+            src, mask = features[-1].decompose()
+            batch_size = src.shape[0]
+
             src = self.input_proj(src)
 
             fpns = [features[2].tensors, features[1].tensors, features[0].tensors]

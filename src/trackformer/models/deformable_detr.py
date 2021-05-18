@@ -49,10 +49,10 @@ class DeformableDETR(DETR):
         self.num_feature_levels = num_feature_levels
         if not two_stage:
             self.query_embed = nn.Embedding(num_queries, self.hidden_dim * 2)
+        num_channels = backbone.num_channels[-3:]
         if num_feature_levels > 1:
             # return_layers = {"layer2": "0", "layer3": "1", "layer4": "2"}
             num_backbone_outs = len(backbone.strides) - 1
-            num_channels = backbone.num_channels[-3:]
 
             input_proj_list = []
             for i in range(num_backbone_outs):
@@ -135,7 +135,7 @@ class DeformableDETR(DETR):
         features, pos = self.backbone(samples)
 
         features_all = features
-        pos_all = pos
+        # pos_all = pos
         # return_layers = {"layer2": "0", "layer3": "1", "layer4": "2"}
         features = features[-3:]
         pos = pos[-3:]
@@ -147,6 +147,7 @@ class DeformableDETR(DETR):
             srcs.append(self.input_proj[l](src))
             masks.append(mask)
             assert mask is not None
+
         if self.num_feature_levels > len(srcs):
             _len_srcs = len(srcs)
             for l in range(_len_srcs, self.num_feature_levels):
