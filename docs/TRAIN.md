@@ -16,7 +16,7 @@ python src/train.py with \
     tracking \
     crowdhuman \
     full_res \
-    output_dir=models/crowdhuman_train_val_deformable \
+    output_dir=models/crowdhuman_train_val_deformable_v2 \
 ```
 
 ## MOT17
@@ -30,7 +30,7 @@ python src/train.py with \
     mot17 \
     full_res \
     resume=models/crowdhuman_train_val_deformable/checkpoint.pth \
-    output_dir=models/mot17_train_deformable_private \
+    output_dir=models/mot17_train_deformable_private_v2 \
 ```
 
 #### Public detections
@@ -42,7 +42,7 @@ python src/train.py with \
     mot17 \
     full_res \
     resume=models/r50_deformable_detr-checkpoint.pth \
-    output_dir=models/mot17_train_deformable_public \
+    output_dir=models/mot17_train_deformable_public_v2 \
     epochs=40 \
     lr_drop=10
 ```
@@ -55,14 +55,14 @@ For our MOTS20 test set submission, we finetune a MOT17 private detection model 
 python src/train.py with \
     tracking \
     coco_person_masks \
-    output_dir=models/mot17_train_private_coco_person_masks \
+    output_dir=models/mot17_train_private_coco_person_masks_v2 \
 ```
 
 ```
 python src/train.py with \
     tracking \
     mots20 \
-    output_dir=models/mots20_train_masks \
+    output_dir=models/mots20_train_masks_v2 \
 ```
 
 ### Ablation studies
@@ -109,9 +109,10 @@ Furthermore, we provide a script for starting Slurm jobs with [submitit](https:/
 python src/run_with_submitit.py with \
     num_gpus=8 \
     vram=16GB \
+    cluster=slurm \
     train.deformable \
     train.tracking \
     train.crowdhuman \
     train.full_res \
-    train.output_dir=models/crowdhuman_train_val_deformable \
+    train.output_dir=models/crowdhuman_train_val_deformable_v2 \
 ```

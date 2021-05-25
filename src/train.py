@@ -33,7 +33,6 @@ ex.add_named_config('full_res', 'cfgs/train_full_res.yaml')
 ex.add_named_config('focal_loss', 'cfgs/train_focal_loss.yaml')
 
 
-@ex.capture
 def train(args: Namespace) -> None:
     print(args)
 
@@ -58,8 +57,7 @@ def train(args: Namespace) -> None:
 
         yaml.dump(
             vars(args),
-            open(output_dir / 'config.yaml', 'w'),
-            allow_unicode=True)
+            open(output_dir / 'config.yaml', 'w'), allow_unicode=True)
 
     device = torch.device(args.device)
 
@@ -324,9 +322,15 @@ def train(args: Namespace) -> None:
     print('Training time {}'.format(total_time_str))
 
 
-@ex.automain
-def main(_config: dict, _run: sacred.run) -> None:
-    # TODO: hierachical Namespacing for nested dict
+@ex.main
+def load_config(_config, _run):
+    """ We use sacred only for config loading from YAML files. """
     sacred.commands.print_config(_run)
-    args = nested_dict_to_namespace(_config)
+
+
+if __name__ == '__main__':
+    # TODO: hierachical Namespacing for nested dict
+    config = ex.run_commandline().config
+    args = nested_dict_to_namespace(config)
+    # args.train = Namespace(**config['train'])
     train(args)

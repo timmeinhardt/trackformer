@@ -39,7 +39,7 @@ In order to evaluate TrackFormer on a multi-object tracking dataset, we provide 
 #### Private detections
 
 ```
-python src/track.py reid
+python src/track.py with reid
 ```
 <center>
 
