@@ -33,6 +33,8 @@ class Tracker:
         self.reid_greedy_matching = tracker_cfg['reid_greedy_matching']
 
         if self.generate_attention_maps:
+            assert hasattr(self.obj_detector.transformer.decoder.layers[-1], 'multihead_attn'), 'Generation of attention maps not possible for deformable DETR.'
+
             attention_data = {
                 'maps': None,
                 'conv_features': {},
@@ -43,7 +45,7 @@ class Tracker:
             attention_data['hooks'].append(hook)
 
             def add_attention_map_to_data(self, input, output):
-                height, width = attention_data['conv_features']['0'].tensors.shape[-2:]
+                height, width = attention_data['conv_features']['3'].tensors.shape[-2:]
                 attention_maps = output[1].view(-1, height, width)
 
                 attention_data.update({'maps': attention_maps})
@@ -471,7 +473,7 @@ class Tracker:
         # Generate Results #
         ####################
 
-        if 'masks' in result:
+        if 'masks' in result and self.tracks:
             track_mask_probs = torch.stack([track.mask for track in self.tracks])
             index_map = torch.arange(track_mask_probs.size(0))[:, None, None]
             index_map = index_map.expand_as(track_mask_probs)
