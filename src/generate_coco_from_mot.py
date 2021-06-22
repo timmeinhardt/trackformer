@@ -359,6 +359,11 @@ if __name__ == '__main__':
             seqs_names=['MOT17-02-FRCNN', 'MOT17-04-FRCNN', 'MOT17-05-FRCNN', 'MOT17-09-FRCNN', 'MOT17-10-FRCNN', 'MOT17-11-FRCNN', 'MOT17-13-FRCNN'],
             frame_range={'start': 0, 'end': 0.5})
         generate_coco_from_mot(
+            'mot17_train_cross_val_frame_0_5_to_1_0_coco',
+            seqs_names=['MOT17-02-FRCNN', 'MOT17-04-FRCNN', 'MOT17-05-FRCNN', 'MOT17-09-FRCNN', 'MOT17-10-FRCNN', 'MOT17-11-FRCNN', 'MOT17-13-FRCNN'],
+            frame_range={'start': 0.5, 'end': 1.0})
+
+        generate_coco_from_mot(
             'mot17_train_cross_val_frame_0_75_to_1_0_coco',
             seqs_names=['MOT17-02-FRCNN', 'MOT17-04-FRCNN', 'MOT17-05-FRCNN', 'MOT17-09-FRCNN', 'MOT17-10-FRCNN', 'MOT17-11-FRCNN', 'MOT17-13-FRCNN'],
             frame_range={'start': 0.75, 'end': 1.0})

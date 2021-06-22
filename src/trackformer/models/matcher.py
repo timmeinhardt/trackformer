@@ -66,7 +66,11 @@ class HungarianMatcher(nn.Module):
         # We flatten to compute the cost matrices in a batch
         #
         # [batch_size * num_queries, num_classes]
-        out_prob = outputs["pred_logits"].flatten(0, 1).softmax(-1)
+        if self.focal_loss:
+            out_prob = outputs["pred_logits"].flatten(0, 1).sigmoid()
+        else:
+            out_prob = outputs["pred_logits"].flatten(0, 1).softmax(-1)
+
         # [batch_size * num_queries, 4]
         out_bbox = outputs["pred_boxes"].flatten(0, 1)
 

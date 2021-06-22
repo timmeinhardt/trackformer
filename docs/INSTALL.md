@@ -10,7 +10,7 @@
 
     1. `pip3 install -r requirements.txt`
     2. Install PyTorch 1.5 and torchvision 0.6 from [here](https://pytorch.org/get-started/previous-versions/#v150).
-    3. Install pycocotools: `pip install -U 'git+https://github.com/timmeinhardt/cocoapi.git#subdirectory=PythonAPI'`
+    3. Install pycocotools (with fixed ignore flag): `pip install -U 'git+https://github.com/timmeinhardt/cocoapi.git#subdirectory=PythonAPI'`
     5. Install MultiScaleDeformableAttention package: `python src/trackformer/models/ops/setup.py build --build-base=src/trackformer/models/ops/ install`
 
 3. Download and unpack datasets in the `data` directory:

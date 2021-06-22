@@ -29,7 +29,7 @@ def build_model(args):
 
     detr_kwargs = {
         'backbone': backbone,
-        'num_classes': num_classes -1 if args.focal_loss else num_classes,
+        'num_classes': num_classes - 1 if args.focal_loss else num_classes,
         'num_queries': args.num_queries,
         'aux_loss': args.aux_loss,}
 
