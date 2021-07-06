@@ -63,15 +63,29 @@ class MOT(CocoDetection):
             if orig_w < width:
                 frame_img, frame_target = T.RandomCrop((height, orig_w))(frame_img, frame_target)
             else:
-                frame_img, frame_target = T.RandomPad(
-                    max_size=(orig_w, height))(frame_img, frame_target)
+                # frame_img, frame_target = T.RandomPad(
+                    # max_size=(orig_w, height))(frame_img, frame_target)
+
+                total_pad = orig_w - width
+                pad_left = torch.randint(0, total_pad + 1, (1,)).item()
+                pad_right = total_pad - pad_left
+
+                padding = (pad_left, 0, pad_right, 0)
+                frame_img, frame_target = T.pad(frame_img, frame_target, padding)
 
             width, height = frame_img.size
             if orig_h < height:
                 frame_img, frame_target = T.RandomCrop((orig_h, width))(frame_img, frame_target)
             else:
-                frame_img, frame_target = T.RandomPad(
-                    max_size=(width, orig_h))(frame_img, frame_target)
+                # frame_img, frame_target = T.RandomPad(
+                #     max_size=(width, orig_h))(frame_img, frame_target)
+
+                total_pad = orig_h - height
+                pad_top = torch.randint(0, total_pad + 1, (1,)).item()
+                pad_bottom = total_pad - pad_top
+
+                padding = (0, pad_top, 0, pad_bottom)
+                frame_img, frame_target = T.pad(frame_img, frame_target, padding)
 
         frame_img, frame_target = self._norm_transforms(frame_img, frame_target)
 

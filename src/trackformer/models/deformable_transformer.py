@@ -175,6 +175,14 @@ class DeformableTransformer(nn.Module):
             reference_points = self.reference_points(query_embed).sigmoid()
 
             if targets is not None and 'track_query_hs_embeds' in targets[0]:
+
+                # print([t['track_query_hs_embeds'].shape for t in targets])
+                # prev_hs_embed = torch.nn.utils.rnn.pad_sequence([t['track_query_hs_embeds'] for t in targets], batch_first=True, padding_value=float('nan'))
+                # prev_boxes = torch.nn.utils.rnn.pad_sequence([t['track_query_boxes'] for t in targets], batch_first=True, padding_value=float('nan'))
+                # print(prev_hs_embed.shape)
+                # query_mask = torch.isnan(prev_hs_embed)
+                # print(query_mask)
+
                 prev_hs_embed = torch.stack([t['track_query_hs_embeds'] for t in targets])
                 prev_boxes = torch.stack([t['track_query_boxes'] for t in targets])
 

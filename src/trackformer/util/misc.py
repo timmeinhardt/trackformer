@@ -347,6 +347,22 @@ class NestedTensor(object):
     def __repr__(self):
         return str(self.tensors)
 
+    def unmasked_tensor(self, index: int):
+        tensor = self.tensors[index]
+
+        if not self.mask[index].any():
+            return tensor
+
+        h_index = self.mask[index, 0, :].nonzero(as_tuple=True)[0]
+        if len(h_index):
+            tensor = tensor[:, :, :h_index[0]]
+
+        w_index = self.mask[index, :, 0].nonzero(as_tuple=True)[0]
+        if len(w_index):
+            tensor = tensor[:, :w_index[0], :]
+
+        return tensor
+
 
 def setup_for_distributed(is_master):
     """

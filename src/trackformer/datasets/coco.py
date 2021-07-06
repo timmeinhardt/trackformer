@@ -83,16 +83,31 @@ class CocoDetection(torchvision.datasets.CocoDetection):
             prev_img, prev_target = transform(prev_img, prev_target)
 
             w, h = prev_img.size
+
             if orig_w < w:
                 prev_img, prev_target = T.RandomCrop((h, orig_w))(prev_img, prev_target)
             else:
-                prev_img, prev_target = T.RandomPad(max_size=(orig_w, h))(prev_img, prev_target)
+                # prev_img, prev_target = T.RandomPad(max_size=(orig_w, h))(prev_img, prev_target)
+
+                total_pad = orig_w - w
+                pad_left = torch.randint(0, total_pad + 1, (1,)).item()
+                pad_right = total_pad - pad_left
+
+                padding = (pad_left, 0, pad_right, 0)
+                prev_img, prev_target = T.pad(prev_img, prev_target, padding)
 
             w, h = prev_img.size
             if orig_h < h:
                 prev_img, prev_target = T.RandomCrop((orig_h, w))(prev_img, prev_target)
             else:
-                prev_img, prev_target = T.RandomPad(max_size=(w, orig_h))(prev_img, prev_target)
+                # prev_img, prev_target = T.RandomPad(max_size=(w, orig_h))(prev_img, prev_target)
+
+                total_pad = orig_h - h
+                pad_top = torch.randint(0, total_pad + 1, (1,)).item()
+                pad_bottom = total_pad - pad_top
+
+                padding = (0, pad_top, 0, pad_bottom)
+                prev_img, prev_target = T.pad(prev_img, prev_target, padding)
 
         img, target = self._norm_transforms(img, target)
 

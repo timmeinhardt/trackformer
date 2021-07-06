@@ -7,6 +7,7 @@ import torch
 import torchvision.transforms as T
 from matplotlib import colors
 from matplotlib import pyplot as plt
+from torchvision.ops.boxes import clip_boxes_to_image
 from visdom import Visdom
 
 from .util.plot_utils import fig_to_numpy
@@ -163,7 +164,9 @@ def vis_results(visualizer, img, result, target, tracking):
         if not keep[box_id]:
             continue
 
-        x1, y1, x2, y2 = result['boxes'][box_id]
+        # x1, y1, x2, y2 = result['boxes'][box_id]
+        result_boxes = clip_boxes_to_image(result['boxes'], target['size'])
+        x1, y1, x2, y2 = result_boxes[box_id]
 
         axarr[0].add_patch(plt.Rectangle(
             (x1, y1), x2 - x1, y2 - y1,

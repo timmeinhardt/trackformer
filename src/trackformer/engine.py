@@ -143,7 +143,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module, postproc
 
             vis_results(
                 visualizers['example_results'],
-                samples.tensors[0],
+                samples.unmasked_tensor(0),
                 results[0],
                 targets[0],
                 args.tracking)
@@ -206,7 +206,7 @@ def evaluate(model, criterion, postprocessors, data_loader, device,
 
             vis_results(
                 visualizers['example_results'],
-                samples.tensors[0],
+                samples.unmasked_tensor(0),
                 results[0],
                 targets[0],
                 args.tracking)

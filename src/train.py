@@ -46,7 +46,7 @@ def train(args: Namespace) -> None:
     if not args.deformable:
         assert args.num_feature_levels == 1
     if args.tracking:
-        assert args.batch_size == 1
+        # assert args.batch_size == 1
 
         if args.tracking_eval:
             assert 'mot' in args.dataset

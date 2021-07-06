@@ -33,9 +33,9 @@ class DETRTrackingBase(nn.Module):
         self.eval()
         self._tracking = True
 
-    def forward(self, samples: NestedTensor, targets: list = None):
+    def forward(self, samples: NestedTensor, targets: list = None, prev_features=None):
         if targets is not None and not self._tracking:
-            prev_out, *_ = super().forward([targets[0]['prev_image']])
+            prev_out, _, prev_features, _, _ = super().forward([t['prev_image'] for t in targets])
 
             prev_outputs_without_aux = {
                 k: v for k, v in prev_out.items() if 'aux_outputs' not in k}
@@ -126,7 +126,22 @@ class DETRTrackingBase(nn.Module):
 
                 target['track_queries_match_mask'] = track_queries_match_mask.to(device)
 
-        out, targets, features, memory, hs  = super().forward(samples, targets)
+            # adjust number of track queries to allow for batch sizes > 1
+            min_track_query_hs_embeds = min([len(t['track_query_hs_embeds']) for t in targets])
+            for i, t in enumerate(targets):
+
+                num_remove = len(t['track_query_hs_embeds']) - min_track_query_hs_embeds
+
+                if num_remove:
+                    num_match_ids_remove = t['track_queries_match_mask'][:num_remove].eq(1.0).sum()
+
+                    t['track_queries_match_mask'] = t['track_queries_match_mask'][num_remove:]
+                    t['track_query_hs_embeds'] = t['track_query_hs_embeds'][num_remove:]
+                    t['track_query_boxes'] = t['track_query_boxes'][num_remove:]
+
+                    t['track_query_match_ids'] = t['track_query_match_ids'][num_match_ids_remove:]
+
+        out, targets, features, memory, hs  = super().forward(samples, targets, prev_features)
 
         return out, targets, features, memory, hs
 
