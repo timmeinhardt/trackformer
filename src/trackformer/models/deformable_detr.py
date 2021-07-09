@@ -140,11 +140,23 @@ class DeformableDETR(DETR):
         features = features[-3:]
         pos = pos[-3:]
 
+        if prev_features is None:
+            prev_features = features
+        else:
+            prev_features = prev_features[-3:]
+
         srcs = []
         masks = []
-        for l, feat in enumerate(features):
+        for l, (feat, prev_feat) in enumerate(zip(features, prev_features)):
             src, mask = feat.decompose()
-            srcs.append(self.input_proj[l](src))
+
+            prev_src, _ = prev_feat.decompose()
+
+            if hasattr(self, 'concat_prev_frame'):
+                srcs.append(self.concat_prev_frame(torch.cat([self.input_proj[l](src), self.input_proj[l](prev_src)], dim=1)))
+            else:
+                srcs.append(self.input_proj[l](src))
+
             masks.append(mask)
             assert mask is not None
 
@@ -152,7 +164,10 @@ class DeformableDETR(DETR):
             _len_srcs = len(srcs)
             for l in range(_len_srcs, self.num_feature_levels):
                 if l == _len_srcs:
-                    src = self.input_proj[l](features[-1].tensors)
+                    if hasattr(self, 'concat_prev_frame'):
+                        src = self.concat_prev_frame(torch.cat([self.input_proj[l](features[-1].tensors), self.input_proj[l](prev_features[-1].tensors)], dim=1))
+                    else:
+                        src = self.input_proj[l](features[-1].tensors)
                 else:
                     src = self.input_proj[l](srcs[-1])
                 m = samples.mask

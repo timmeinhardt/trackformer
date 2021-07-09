@@ -286,7 +286,7 @@ class Tracker:
             target = {k: v.to(self.device) for k, v in target.items()}
             target = [target]
 
-        outputs, *_ = self.obj_detector(img, target)
+        outputs, _, features, _, _ = self.obj_detector(img, target, self._prev_features)
 
         hs_embeds = outputs['hs_embed'][0]
 
@@ -504,7 +504,7 @@ class Tracker:
             t.count_inactive += 1
 
         self.frame_index += 1
-        self._prev_blob = blob
+        self._prev_features = features
 
         if self.reid_sim_only:
             self.tracks_to_inactive(self.tracks)

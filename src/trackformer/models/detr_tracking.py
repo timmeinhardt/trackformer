@@ -22,6 +22,8 @@ class DETRTrackingBase(nn.Module):
 
         self._tracking = False
 
+        self.concat_prev_frame = nn.Conv2d(self.hidden_dim * 2, self.hidden_dim, kernel_size=1)
+
     def train(self, mode: bool = True):
         """Sets the module in train mode."""
         self._tracking = False

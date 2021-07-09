@@ -27,9 +27,9 @@ tracker_cfg:
     # [False, 'center_distance', 'min_iou_0_5']
     public_detections: False
     # score threshold for detections
-    detection_obj_score_thresh: 0.9
+    detection_obj_score_thresh: 0.5
     # score threshold for keeping the track alive
-    track_obj_score_thresh: 0.8
+    track_obj_score_thresh: 0.5
     # NMS threshold for detection
     detection_nms_thresh: 0.9
     # NMS theshold while tracking

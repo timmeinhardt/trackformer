@@ -293,11 +293,12 @@ def evaluate(model, criterion, postprocessors, data_loader, device,
             'post': postprocessors,
             'img_transform': args.img_transform}
 
-        run = ex.run(config_updates={
+        config_updates = {
             'seed': None,
             'dataset_name': dataset_name,
             'frame_range': data_loader.dataset.frame_range,
-            'obj_detector_model': obj_detector_model})
+            'obj_detector_model': obj_detector_model}
+        run = ex.run(config_updates=config_updates)
 
         mot_accums = utils.all_gather(run.result)[:len(seqs)]
         mot_accums = [item for sublist in mot_accums for item in sublist]
