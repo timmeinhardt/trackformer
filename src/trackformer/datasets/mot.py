@@ -37,62 +37,6 @@ class MOT(CocoDetection):
         else:
             return {'start': 0, 'end': 1.0}
 
-    def _add_frame_to_target(self, target, image_id, random_state, key_prefix):
-        random.setstate(random_state)
-        frame_img, frame_target = self._getitem_from_id(image_id)
-
-        # random jitter
-        if self._prev_frame_rnd_augs and random.uniform(0, 1) < 0.5:
-            # prev img
-            orig_w, orig_h = frame_img.size
-
-            width, height = frame_img.size
-            size = random.randint(
-                int((1.0 - self._prev_frame_rnd_augs) * min(width, height)),
-                int((1.0 + self._prev_frame_rnd_augs) * min(width, height)))
-            frame_img, frame_target = T.RandomResize([size])(frame_img, frame_target)
-
-            width, height = frame_img.size
-            min_size = (
-                int((1.0 - self._prev_frame_rnd_augs) * width),
-                int((1.0 - self._prev_frame_rnd_augs) * height))
-            transform = T.RandomSizeCrop(min_size=min_size)
-            frame_img, frame_target = transform(frame_img, frame_target)
-
-            width, height = frame_img.size
-            if orig_w < width:
-                frame_img, frame_target = T.RandomCrop((height, orig_w))(frame_img, frame_target)
-            else:
-                # frame_img, frame_target = T.RandomPad(
-                    # max_size=(orig_w, height))(frame_img, frame_target)
-
-                total_pad = orig_w - width
-                pad_left = torch.randint(0, total_pad + 1, (1,)).item()
-                pad_right = total_pad - pad_left
-
-                padding = (pad_left, 0, pad_right, 0)
-                frame_img, frame_target = T.pad(frame_img, frame_target, padding)
-
-            width, height = frame_img.size
-            if orig_h < height:
-                frame_img, frame_target = T.RandomCrop((orig_h, width))(frame_img, frame_target)
-            else:
-                # frame_img, frame_target = T.RandomPad(
-                #     max_size=(width, orig_h))(frame_img, frame_target)
-
-                total_pad = orig_h - height
-                pad_top = torch.randint(0, total_pad + 1, (1,)).item()
-                pad_bottom = total_pad - pad_top
-
-                padding = (0, pad_top, 0, pad_bottom)
-                frame_img, frame_target = T.pad(frame_img, frame_target, padding)
-
-        frame_img, frame_target = self._norm_transforms(frame_img, frame_target)
-
-        target[f'{key_prefix}_image'] = frame_img
-        for k, v in frame_target.items():
-            target[f'{key_prefix}_{k}'] = v
-
     def seq_length(self, idx):
         return self.coco.imgs[idx]['seq_length']
 
@@ -102,18 +46,29 @@ class MOT(CocoDetection):
     def __getitem__(self, idx):
         random_state = random.getstate()
 
-        img, target = self._getitem_from_id(idx)
-        img, target = self._norm_transforms(img, target)
+        img, target = self._getitem_from_id(idx, random_state)
 
         if self._prev_frame:
             frame_id = self.coco.imgs[idx]['frame_id']
 
+            # PREV
             # first frame has no previous frame
             prev_frame_id = random.randint(
                 max(0, frame_id - self._prev_frame_range),
                 min(frame_id + self._prev_frame_range, self.seq_length(idx) - 1))
             prev_image_id = self.coco.imgs[idx]['first_frame_image_id'] + prev_frame_id
-            self._add_frame_to_target(target, prev_image_id, random_state, 'prev')
+
+            prev_img, prev_target = self._getitem_from_id(prev_image_id, random_state)
+            target[f'prev_image'] = prev_img
+            target[f'prev_target'] = prev_target
+
+            # PREV PREV
+            prev_prev_frame_id = min(max(0, prev_frame_id + prev_frame_id - frame_id), self.seq_length(idx) - 1)
+            prev_prev_image_id = self.coco.imgs[idx]['first_frame_image_id'] + prev_prev_frame_id
+
+            prev_prev_img, prev_prev_target = self._getitem_from_id(prev_prev_image_id, random_state)
+            target[f'prev_prev_image'] = prev_prev_img
+            target[f'prev_prev_target'] = prev_prev_target
 
         return img, target
 

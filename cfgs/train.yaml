@@ -54,7 +54,6 @@ track_prev_frame_rnd_augs: 0.01
 track_query_false_positive_prob: 0.1
 track_query_false_negative_prob: 0.4
 track_query_false_positive_eos_weight: true
-track_query_noise: 0.0
 track_attention: false
 # Segmentation
 masks: false

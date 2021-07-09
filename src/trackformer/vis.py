@@ -106,10 +106,10 @@ def vis_results(visualizer, img, result, target, tracking):
 
     imgs = [inv_normalize(img).cpu()]
     img_ids = [target['image_id'].item()]
-    for key in ['prev_image', 'random_image']:
-        if key in target:
-            imgs.append(inv_normalize(target[key]).cpu())
-            img_ids.append(target[f'{key}_id'].item())
+    for key in ['prev', 'prev_prev']:
+        if f'{key}_image' in target:
+            imgs.append(inv_normalize(target[f'{key}_image']).cpu())
+            img_ids.append(target[f'{key}_target'][f'image_id'].item())
 
     # img.shape=[3, H, W]
     dpi = 96
@@ -203,14 +203,16 @@ def vis_results(visualizer, img, result, target, tracking):
     axarr[0].legend(handles=legend_handles)
 
     i = 1
-    for frame_prefix in ['prev', 'random']:
-        if f'{frame_prefix}_image_id' not in target or f'{frame_prefix}_boxes' not in target:
+    for frame_prefix in ['prev', 'prev_prev']:
+        # if f'{frame_prefix}_image_id' not in target or f'{frame_prefix}_boxes' not in target:
+        if f'{frame_prefix}_target' not in target:
             continue
 
-        cmap = plt.cm.get_cmap('hsv', len(target[f'{frame_prefix}_track_ids']))
+        frame_target = target[f'{frame_prefix}_target']
+        cmap = plt.cm.get_cmap('hsv', len(frame_target['track_ids']))
 
-        for j, track_id in enumerate(target[f'{frame_prefix}_track_ids']):
-            x1, y1, x2, y2 = target[f'{frame_prefix}_boxes'][j]
+        for j, track_id in enumerate(frame_target['track_ids']):
+            x1, y1, x2, y2 = frame_target['boxes'][j]
             axarr[i].text(
                 x1, y1, f"track_id={track_id}",
                 fontsize=10, bbox=dict(facecolor='white', alpha=0.5))
@@ -218,8 +220,8 @@ def vis_results(visualizer, img, result, target, tracking):
                 (x1, y1), x2 - x1, y2 - y1,
                 fill=False, color='green', linewidth=2))
 
-            if f'{frame_prefix}_masks' in target:
-                mask = target[f'{frame_prefix}_masks'][j].cpu().numpy()
+            if 'masks' in frame_target:
+                mask = frame_target['masks'][j].cpu().numpy()
                 mask = np.ma.masked_where(mask == 0.0, mask)
 
                 axarr[i].imshow(

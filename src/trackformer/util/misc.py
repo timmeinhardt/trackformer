@@ -570,3 +570,11 @@ def nested_dict_to_namespace(dictionary):
         for key, value in dictionary.items():
             setattr(namespace, key, nested_dict_to_namespace(value))
     return namespace
+
+def nested_dict_to_device(dictionary, device):
+    output = {}
+    if isinstance(dictionary, dict):
+        for key, value in dictionary.items():
+            output[key] = nested_dict_to_device(value, device)
+        return output
+    return dictionary.to(device)

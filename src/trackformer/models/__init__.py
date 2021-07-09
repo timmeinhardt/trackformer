@@ -36,7 +36,6 @@ def build_model(args):
     tracking_kwargs = {
         'track_query_false_positive_prob': args.track_query_false_positive_prob,
         'track_query_false_negative_prob': args.track_query_false_negative_prob,
-        'track_query_noise': args.track_query_noise,
         'matcher': matcher,}
 
     mask_kwargs = {

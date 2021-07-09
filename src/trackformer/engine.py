@@ -53,17 +53,16 @@ def make_results(outputs, targets, postprocessors, tracking, return_only_orig=Tr
                 target[key] = postprocessors['bbox'].process_boxes(
                     target[key], target_size)[0].cpu()
 
-        if 'random_boxes' in target:
-            random_target_sizes = torch.stack([t["random_size"] for t in targets], dim=0)
-            target['random_boxes'] = postprocessors['bbox'].process_boxes(
-                target['random_boxes'], random_target_sizes[i].unsqueeze(dim=0))[0].cpu()
+        if tracking and 'prev_target' in target:
+            target['prev_prev_target']['boxes'] = postprocessors['bbox'].process_boxes(
+                target['prev_prev_target']['boxes'],
+                target['prev_prev_target']['size'].unsqueeze(dim=0))[0].cpu()
 
-        if tracking and 'prev_boxes' in target:
-            prev_target_sizes = torch.stack([t["prev_size"] for t in targets], dim=0)
-            target['prev_boxes'] = postprocessors['bbox'].process_boxes(
-                target['prev_boxes'], prev_target_sizes[i].unsqueeze(dim=0))[0].cpu()
+            target['prev_target']['boxes'] = postprocessors['bbox'].process_boxes(
+                target['prev_target']['boxes'],
+                target['prev_target']['size'].unsqueeze(dim=0))[0].cpu()
 
-            if len(target['track_query_match_ids']):
+            if 'track_query_match_ids' in target and len(target['track_query_match_ids']):
                 track_queries_iou, _ = box_iou(
                     target['boxes'][target['track_query_match_ids']],
                     result['boxes'])
@@ -97,12 +96,11 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module, postproc
 
     for i, (samples, targets) in enumerate(metric_logger.log_every(data_loader, epoch)):
         samples = samples.to(device)
-        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+        targets = [utils.nested_dict_to_device(t, device) for t in targets]
 
         # in order to be able to modify targets inside the forward call we need
         # to pass it through as torch.nn.parallel.DistributedDataParallel only
         # passes copies
-
         outputs, targets, *_ = model(samples, targets)
 
         loss_dict = criterion(outputs, targets)
@@ -182,7 +180,7 @@ def evaluate(model, criterion, postprocessors, data_loader, device,
 
     for i, (samples, targets) in enumerate(metric_logger.log_every(data_loader, 'Test:')):
         samples = samples.to(device)
-        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+        targets = [utils.nested_dict_to_device(t, device) for t in targets]
 
         outputs, targets, *_ = model(samples, targets)
 

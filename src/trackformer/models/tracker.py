@@ -68,8 +68,7 @@ class Tracker:
     def reset(self, hard=True):
         self.tracks = []
         self.inactive_tracks = []
-        self._prev_blob = None
-        self._prev_frame = None
+        self._prev_features = None
 
         if hard:
             self.track_num = 0

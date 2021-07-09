@@ -7,19 +7,18 @@ from ..util import box_ops
 from ..util.misc import NestedTensor
 from .deformable_detr import DeformableDETR
 from .detr import DETR
+from .matcher import HungarianMatcher
 
 
 class DETRTrackingBase(nn.Module):
 
     def __init__(self,
-                 track_query_false_positive_prob=0.0,
-                 track_query_false_negative_prob=0.0,
-                 track_query_noise=0.0,
-                 matcher=None):
+                 track_query_false_positive_prob: float = 0.0,
+                 track_query_false_negative_prob: float = 0.0,
+                 matcher: HungarianMatcher = None):
         self._matcher = matcher
         self._track_query_false_positive_prob = track_query_false_positive_prob
         self._track_query_false_negative_prob = track_query_false_negative_prob
-        self._track_query_noise = track_query_noise
 
         self._tracking = False
 

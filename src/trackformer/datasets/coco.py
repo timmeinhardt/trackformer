@@ -35,7 +35,14 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         self._prev_frame = prev_frame
         self._prev_frame_rnd_augs = prev_frame_rnd_augs
 
-    def _getitem_from_id(self, image_id):
+    def _getitem_from_id(self, image_id, random_state=None):
+        # if random state is given we do the data augmentation with the state
+        # and then apply the random jitter. this ensures that (simulated) adjacent
+        # frames have independent jitter.
+        if random_state is not None:
+            curr_random_state = random.getstate()
+            random.setstate(random_state)
+
         img, target = super(CocoDetection, self).__getitem__(image_id)
         image_id = self.ids[image_id]
         target = {'image_id': image_id,
@@ -55,67 +62,88 @@ class CocoDetection(torchvision.datasets.CocoDetection):
                 target[f"{field}_ignore"] = target[field][ignore]
                 target[field] = target[field][~ignore]
 
+        if random_state is not None:
+            random.setstate(curr_random_state)
+
+        if 'track_ids' not in target:
+            target['track_ids'] = torch.arange(len(target['labels']))
+
+        img, target = self._add_random_jitter(img, target)
+        img, target = self._norm_transforms(img, target)
+
         return img, target
 
-    def __getitem__(self, idx):
-        img, target = self._getitem_from_id(idx)
+    # def _add_random_jitter(self, img, target):
+    #     if self._prev_frame_rnd_augs:
+    #         orig_w, orig_h = img.size
 
-        target['track_ids'] = torch.arange(len(target['labels']))
+    #         crop_width = random.randint(
+    #             int((1.0 - self._prev_frame_rnd_augs) * orig_w),
+    #             orig_w)
+    #         crop_height = int(orig_h * crop_width / orig_w)
 
-        if self._prev_frame:
-            prev_img = img.copy()
-            prev_target = copy.deepcopy(target)
+    #         transform = T.RandomCrop((crop_height, crop_width))
+    #         img, target = transform(img, target)
 
+    #         img, target = T.resize(img, target, (orig_w, orig_h))
+
+    #     return img, target
+
+    def _add_random_jitter(self, img, target):
+        if self._prev_frame_rnd_augs: # and random.uniform(0, 1) < 0.5:
             orig_w, orig_h = img.size
 
-            # prev img
-            w, h = prev_img.size
+            width, height = img.size
             size = random.randint(
-                int((1.0 - self._prev_frame_rnd_augs) * min(w, h)),
-                int((1.0 + self._prev_frame_rnd_augs) * min(w, h)))
-            prev_img, prev_target = T.RandomResize([size])(prev_img, prev_target)
+                int((1.0 - self._prev_frame_rnd_augs) * min(width, height)),
+                int((1.0 + self._prev_frame_rnd_augs) * min(width, height)))
+            img, target = T.RandomResize([size])(img, target)
 
-            w, h = prev_img.size
+            width, height = img.size
             min_size = (
-                int((1.0 - self._prev_frame_rnd_augs) * w),
-                int((1.0 - self._prev_frame_rnd_augs) * h))
+                int((1.0 - self._prev_frame_rnd_augs) * width),
+                int((1.0 - self._prev_frame_rnd_augs) * height))
             transform = T.RandomSizeCrop(min_size=min_size)
-            prev_img, prev_target = transform(prev_img, prev_target)
+            img, target = transform(img, target)
 
-            w, h = prev_img.size
-
-            if orig_w < w:
-                prev_img, prev_target = T.RandomCrop((h, orig_w))(prev_img, prev_target)
+            width, height = img.size
+            if orig_w < width:
+                img, target = T.RandomCrop((height, orig_w))(img, target)
             else:
-                # prev_img, prev_target = T.RandomPad(max_size=(orig_w, h))(prev_img, prev_target)
-
-                total_pad = orig_w - w
-                pad_left = torch.randint(0, total_pad + 1, (1,)).item()
+                total_pad = orig_w - width
+                pad_left = random.randint(0, total_pad)
                 pad_right = total_pad - pad_left
 
                 padding = (pad_left, 0, pad_right, 0)
-                prev_img, prev_target = T.pad(prev_img, prev_target, padding)
+                img, target = T.pad(img, target, padding)
 
-            w, h = prev_img.size
-            if orig_h < h:
-                prev_img, prev_target = T.RandomCrop((orig_h, w))(prev_img, prev_target)
+            width, height = img.size
+            if orig_h < height:
+                img, target = T.RandomCrop((orig_h, width))(img, target)
             else:
-                # prev_img, prev_target = T.RandomPad(max_size=(w, orig_h))(prev_img, prev_target)
-
-                total_pad = orig_h - h
-                pad_top = torch.randint(0, total_pad + 1, (1,)).item()
+                total_pad = orig_h - height
+                pad_top = random.randint(0, total_pad)
                 pad_bottom = total_pad - pad_top
 
                 padding = (0, pad_top, 0, pad_bottom)
-                prev_img, prev_target = T.pad(prev_img, prev_target, padding)
+                img, target = T.pad(img, target, padding)
 
-        img, target = self._norm_transforms(img, target)
+        return img, target
+
+    def __getitem__(self, idx):
+        random_state = random.getstate()
+        img, target = self._getitem_from_id(idx, random_state)
 
         if self._prev_frame:
-            prev_img, prev_target = self._norm_transforms(prev_img, prev_target)
-            target['prev_image'] = prev_img
-            for k, v in prev_target.items():
-                target[f'prev_{k}'] = v
+            # PREV
+            prev_img, prev_target = self._getitem_from_id(idx, random_state)
+            target[f'prev_image'] = prev_img
+            target[f'prev_target'] = prev_target
+
+            # PREV PREV
+            prev_prev_img, prev_prev_target = self._getitem_from_id(idx, random_state)
+            target[f'prev_prev_image'] = prev_prev_img
+            target[f'prev_prev_target'] = prev_prev_target
 
         return img, target
 
