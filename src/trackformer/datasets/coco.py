@@ -22,7 +22,7 @@ class CocoDetection(torchvision.datasets.CocoDetection):
 
     def __init__(self,  img_folder, ann_file, transforms, return_masks,
                  remove_no_obj_imgs=True, norm_transforms=None,
-                 prev_frame=False, prev_frame_rnd_augs=0.05):
+                 prev_frame=False, prev_frame_rnd_augs=0.05, prev_prev_frame=False):
         super(CocoDetection, self).__init__(img_folder, ann_file)
         self._transforms = transforms
         self._norm_transforms = norm_transforms
@@ -34,8 +34,9 @@ class CocoDetection(torchvision.datasets.CocoDetection):
 
         self._prev_frame = prev_frame
         self._prev_frame_rnd_augs = prev_frame_rnd_augs
+        self._prev_prev_frame = prev_prev_frame
 
-    def _getitem_from_id(self, image_id, random_state=None):
+    def _getitem_from_id(self, image_id, random_state=None, random_jitter=True):
         # if random state is given we do the data augmentation with the state
         # and then apply the random jitter. this ensures that (simulated) adjacent
         # frames have independent jitter.
@@ -48,7 +49,7 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         target = {'image_id': image_id,
                   'annotations': target}
         img, target = self.prepare(img, target)
-        
+
         if 'track_ids' not in target:
             target['track_ids'] = torch.arange(len(target['labels']))
 
@@ -65,70 +66,68 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         if random_state is not None:
             random.setstate(curr_random_state)
 
-        if 'track_ids' not in target:
-            target['track_ids'] = torch.arange(len(target['labels']))
-
-        img, target = self._add_random_jitter(img, target)
+        if random_jitter:
+            img, target = self._add_random_jitter(img, target)
         img, target = self._norm_transforms(img, target)
 
         return img, target
 
-    # def _add_random_jitter(self, img, target):
-    #     if self._prev_frame_rnd_augs:
-    #         orig_w, orig_h = img.size
-
-    #         crop_width = random.randint(
-    #             int((1.0 - self._prev_frame_rnd_augs) * orig_w),
-    #             orig_w)
-    #         crop_height = int(orig_h * crop_width / orig_w)
-
-    #         transform = T.RandomCrop((crop_height, crop_width))
-    #         img, target = transform(img, target)
-
-    #         img, target = T.resize(img, target, (orig_w, orig_h))
-
-    #     return img, target
-
     def _add_random_jitter(self, img, target):
-        if self._prev_frame_rnd_augs: # and random.uniform(0, 1) < 0.5:
+        if self._prev_frame_rnd_augs:
             orig_w, orig_h = img.size
 
-            width, height = img.size
-            size = random.randint(
-                int((1.0 - self._prev_frame_rnd_augs) * min(width, height)),
-                int((1.0 + self._prev_frame_rnd_augs) * min(width, height)))
-            img, target = T.RandomResize([size])(img, target)
+            crop_width = random.randint(
+                int((1.0 - self._prev_frame_rnd_augs) * orig_w),
+                orig_w)
+            crop_height = int(orig_h * crop_width / orig_w)
 
-            width, height = img.size
-            min_size = (
-                int((1.0 - self._prev_frame_rnd_augs) * width),
-                int((1.0 - self._prev_frame_rnd_augs) * height))
-            transform = T.RandomSizeCrop(min_size=min_size)
+            transform = T.RandomCrop((crop_height, crop_width))
             img, target = transform(img, target)
 
-            width, height = img.size
-            if orig_w < width:
-                img, target = T.RandomCrop((height, orig_w))(img, target)
-            else:
-                total_pad = orig_w - width
-                pad_left = random.randint(0, total_pad)
-                pad_right = total_pad - pad_left
-
-                padding = (pad_left, 0, pad_right, 0)
-                img, target = T.pad(img, target, padding)
-
-            width, height = img.size
-            if orig_h < height:
-                img, target = T.RandomCrop((orig_h, width))(img, target)
-            else:
-                total_pad = orig_h - height
-                pad_top = random.randint(0, total_pad)
-                pad_bottom = total_pad - pad_top
-
-                padding = (0, pad_top, 0, pad_bottom)
-                img, target = T.pad(img, target, padding)
+            img, target = T.resize(img, target, (orig_w, orig_h))
 
         return img, target
+
+    # def _add_random_jitter(self, img, target):
+    #     if self._prev_frame_rnd_augs: # and random.uniform(0, 1) < 0.5:
+    #         orig_w, orig_h = img.size
+
+    #         width, height = img.size
+    #         size = random.randint(
+    #             int((1.0 - self._prev_frame_rnd_augs) * min(width, height)),
+    #             int((1.0 + self._prev_frame_rnd_augs) * min(width, height)))
+    #         img, target = T.RandomResize([size])(img, target)
+
+    #         width, height = img.size
+    #         min_size = (
+    #             int((1.0 - self._prev_frame_rnd_augs) * width),
+    #             int((1.0 - self._prev_frame_rnd_augs) * height))
+    #         transform = T.RandomSizeCrop(min_size=min_size)
+    #         img, target = transform(img, target)
+
+    #         width, height = img.size
+    #         if orig_w < width:
+    #             img, target = T.RandomCrop((height, orig_w))(img, target)
+    #         else:
+    #             total_pad = orig_w - width
+    #             pad_left = random.randint(0, total_pad)
+    #             pad_right = total_pad - pad_left
+
+    #             padding = (pad_left, 0, pad_right, 0)
+    #             img, target = T.pad(img, target, padding)
+
+    #         width, height = img.size
+    #         if orig_h < height:
+    #             img, target = T.RandomCrop((orig_h, width))(img, target)
+    #         else:
+    #             total_pad = orig_h - height
+    #             pad_top = random.randint(0, total_pad)
+    #             pad_bottom = total_pad - pad_top
+
+    #             padding = (0, pad_top, 0, pad_bottom)
+    #             img, target = T.pad(img, target, padding)
+
+    #     return img, target
 
     def __getitem__(self, idx):
         random_state = random.getstate()
@@ -140,10 +139,11 @@ class CocoDetection(torchvision.datasets.CocoDetection):
             target[f'prev_image'] = prev_img
             target[f'prev_target'] = prev_target
 
-            # PREV PREV
-            prev_prev_img, prev_prev_target = self._getitem_from_id(idx, random_state)
-            target[f'prev_prev_image'] = prev_prev_img
-            target[f'prev_prev_target'] = prev_prev_target
+            if self._prev_prev_frame:
+                # PREV PREV
+                prev_prev_img, prev_prev_target = self._getitem_from_id(idx, random_state)
+                target[f'prev_prev_image'] = prev_prev_img
+                target[f'prev_prev_target'] = prev_prev_target
 
         return img, target
 
@@ -315,6 +315,7 @@ def build(image_set, args, mode='instances'):
         norm_transforms=norm_transforms,
         return_masks=args.masks,
         prev_frame=args.tracking,
-        prev_frame_rnd_augs=args.coco_and_crowdhuman_prev_frame_rnd_augs)
+        prev_frame_rnd_augs=args.coco_and_crowdhuman_prev_frame_rnd_augs,
+        prev_prev_frame=args.track_prev_prev_frame)
 
     return dataset

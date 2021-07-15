@@ -54,9 +54,10 @@ def make_results(outputs, targets, postprocessors, tracking, return_only_orig=Tr
                     target[key], target_size)[0].cpu()
 
         if tracking and 'prev_target' in target:
-            target['prev_prev_target']['boxes'] = postprocessors['bbox'].process_boxes(
-                target['prev_prev_target']['boxes'],
-                target['prev_prev_target']['size'].unsqueeze(dim=0))[0].cpu()
+            if 'prev_prev_target' in target:
+                target['prev_prev_target']['boxes'] = postprocessors['bbox'].process_boxes(
+                    target['prev_prev_target']['boxes'],
+                    target['prev_prev_target']['size'].unsqueeze(dim=0))[0].cpu()
 
             target['prev_target']['boxes'] = postprocessors['bbox'].process_boxes(
                 target['prev_target']['boxes'],

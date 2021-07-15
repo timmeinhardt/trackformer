@@ -152,8 +152,8 @@ class DeformableDETR(DETR):
 
             prev_src, _ = prev_feat.decompose()
 
-            if hasattr(self, 'concat_prev_frame'):
-                srcs.append(self.concat_prev_frame(torch.cat([self.input_proj[l](src), self.input_proj[l](prev_src)], dim=1)))
+            if hasattr(self, 'merge_features'):
+                srcs.append(self.merge_features(torch.cat([self.input_proj[l](src), self.input_proj[l](prev_src)], dim=1)))
             else:
                 srcs.append(self.input_proj[l](src))
 
@@ -164,8 +164,8 @@ class DeformableDETR(DETR):
             _len_srcs = len(srcs)
             for l in range(_len_srcs, self.num_feature_levels):
                 if l == _len_srcs:
-                    if hasattr(self, 'concat_prev_frame'):
-                        src = self.concat_prev_frame(torch.cat([self.input_proj[l](features[-1].tensors), self.input_proj[l](prev_features[-1].tensors)], dim=1))
+                    if hasattr(self, 'merge_features'):
+                        src = self.merge_features(torch.cat([self.input_proj[l](features[-1].tensors), self.input_proj[l](prev_features[-1].tensors)], dim=1))
                     else:
                         src = self.input_proj[l](features[-1].tensors)
                 else:
