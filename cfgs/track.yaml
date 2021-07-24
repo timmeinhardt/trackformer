@@ -34,7 +34,8 @@ tracker_cfg:
     detection_nms_thresh: 0.9
     # NMS theshold while tracking
     track_nms_thresh: 0.9
-    # motion model settings
+    # distance of previous frame for multi-frame attention
+    prev_frame_dist: 1
     # How many timesteps inactive tracks are kept and cosidered for reid
     inactive_patience: -1
     # How similar do image and old track need to be to be considered the same person

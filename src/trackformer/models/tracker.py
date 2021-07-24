@@ -31,6 +31,7 @@ class Tracker:
         self.generate_attention_maps = generate_attention_maps
         self.reid_score_thresh = tracker_cfg['reid_score_thresh']
         self.reid_greedy_matching = tracker_cfg['reid_greedy_matching']
+        self.prev_frame_dist = tracker_cfg['prev_frame_dist']
 
         if self.generate_attention_maps:
             assert hasattr(self.obj_detector.transformer.decoder.layers[-1], 'multihead_attn'), 'Generation of attention maps not possible for deformable DETR.'
@@ -68,7 +69,7 @@ class Tracker:
     def reset(self, hard=True):
         self.tracks = []
         self.inactive_tracks = []
-        self._prev_features = None
+        self._prev_features = deque([None], maxlen=self.prev_frame_dist)
 
         if hard:
             self.track_num = 0
@@ -286,7 +287,7 @@ class Tracker:
             target = {k: v.to(self.device) for k, v in target.items()}
             target = [target]
 
-        outputs, _, features, _, _ = self.obj_detector(img, target, self._prev_features)
+        outputs, _, features, _, _ = self.obj_detector(img, target, self._prev_features[0])
 
         hs_embeds = outputs['hs_embed'][0]
 
@@ -504,7 +505,7 @@ class Tracker:
             t.count_inactive += 1
 
         self.frame_index += 1
-        self._prev_features = features
+        self._prev_features.append(features)
 
         if self.reid_sim_only:
             self.tracks_to_inactive(self.tracks)
