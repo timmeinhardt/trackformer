@@ -20,9 +20,8 @@ from torchvision.ops.boxes import box_iou
 
 from trackformer.datasets.tracking.mots20_sequence import load_mots_gt
 
-DATA_ROOT = 'data/MOT17'
 MOTS_ROOT = 'data/MOTS20'
-VIS_THRESHOLD = 0.0
+VIS_THRESHOLD = 0.25
 
 MOT_15_SEQS_INFO = {
     'ETH-Bahnhof': {'img_width': 640, 'img_height': 480, 'seq_length': 1000},
@@ -36,20 +35,18 @@ MOT_15_SEQS_INFO = {
 
 def generate_coco_from_mot(split_name='train', seqs_names=None,
                            root_split='train', mots=False, mots_vis=False,
-                           frame_range=None):
+                           frame_range=None, data_root='data/MOT17'):
     """
     Generates COCO data from MOT.
     """
-    global DATA_ROOT
-
     if frame_range is None:
         frame_range = {'start': 0.0, 'end': 1.0}
 
     if mots:
-        DATA_ROOT = MOTS_ROOT
-    root_split_path = os.path.join(DATA_ROOT, root_split)
+        data_root = MOTS_ROOT
+    root_split_path = os.path.join(data_root, root_split)
     root_split_mots_path = os.path.join(MOTS_ROOT, root_split)
-    coco_dir = os.path.join(DATA_ROOT, split_name)
+    coco_dir = os.path.join(data_root, split_name)
 
     if os.path.isdir(coco_dir):
         shutil.rmtree(coco_dir)
@@ -64,7 +61,7 @@ def generate_coco_from_mot(split_name='train', seqs_names=None,
                                   "id": 1}]
     annotations['annotations'] = []
 
-    annotations_dir = os.path.join(os.path.join(DATA_ROOT, 'annotations'))
+    annotations_dir = os.path.join(os.path.join(data_root, 'annotations'))
     if not os.path.isdir(annotations_dir):
         os.mkdir(annotations_dir)
     annotation_file = os.path.join(annotations_dir, f'{split_name}.json')
@@ -267,11 +264,11 @@ def generate_coco_from_mot(split_name='train', seqs_names=None,
         json.dump(annotations, anno_file, indent=4)
 
 
-def check_coco_from_mot(split='train'):
+def check_coco_from_mot(split='train', data_root='data/MOT17'):
     """
     Visualize generated COCO data. Only used for debugging.
     """
-    coco_dir = os.path.join(DATA_ROOT, split)
+    coco_dir = os.path.join(data_root, split)
     annotation_file = os.path.join(coco_dir, 'annotations.json')
 
     coco = COCO(annotation_file)
@@ -294,6 +291,7 @@ def check_coco_from_mot(split='train'):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate COCO from MOT.')
     parser.add_argument('--mots20', action='store_true')
+    parser.add_argument('--mot20', action='store_true')
     args = parser.parse_args()
 
     mot15_seqs_names = list(MOT_15_SEQS_INFO.keys())
@@ -320,6 +318,28 @@ if __name__ == '__main__':
             generate_coco_from_mot(
                 f'mots20_val_{i + 1}_coco',
                 seqs_names=val_seqs, mots=True)
+
+    elif args.mot20:
+        data_root = 'data/MOT20'
+        # TRAIN SET
+        generate_coco_from_mot(
+            'mot20_train_coco',
+            seqs_names=['MOT20-01', 'MOT20-02', 'MOT20-03', 'MOT20-05',],
+            data_root=data_root)
+
+        for i in range(0, 4):
+            train_seqs = ['MOT20-01', 'MOT20-02', 'MOT20-03', 'MOT20-05',]
+            val_seqs = train_seqs.pop(i)
+
+            generate_coco_from_mot(
+                f'mot20_train_{i + 1}_coco',
+                seqs_names=train_seqs,
+                data_root=data_root)
+            generate_coco_from_mot(
+                f'mot20_val_{i + 1}_coco',
+                seqs_names=val_seqs,
+                data_root=data_root)
+
     else:
         #
         # MOT17
@@ -368,7 +388,7 @@ if __name__ == '__main__':
             seqs_names=['MOT17-02-FRCNN', 'MOT17-04-FRCNN', 'MOT17-05-FRCNN', 'MOT17-09-FRCNN', 'MOT17-10-FRCNN', 'MOT17-11-FRCNN', 'MOT17-13-FRCNN'],
             frame_range={'start': 0.75, 'end': 1.0})
 
-        # TRAIN SET
+        TRAIN SET
         generate_coco_from_mot(
             'mot17_train_coco',
             seqs_names=['MOT17-02-FRCNN', 'MOT17-04-FRCNN', 'MOT17-05-FRCNN', 'MOT17-09-FRCNN',
