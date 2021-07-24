@@ -270,3 +270,4 @@ class MOT17Sequence(Dataset):
                 results[track_id][frame_id]['score'] = 1.0
 
         return results
+
