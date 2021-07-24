@@ -83,7 +83,8 @@ train_split: train
 val_split: val
 coco_path: data/coco_2017
 coco_panoptic_path: null
-mot_path: data/MOT17
+mot_path_train: data/MOT17
+mot_path_val: data/MOT17
 crowdhuman_path: data/CrowdHuman
 # allows for joint training of mot and crowdhuman with
 # the `mot_crowdhuman` dataset

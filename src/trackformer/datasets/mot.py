@@ -128,7 +128,13 @@ class WeightedConcatDataset(torch.utils.data.ConcatDataset):
 
 
 def build_mot(image_set, args):
-    root = Path(args.mot_path)
+    if image_set == 'train':
+        root = Path(args.mot_path_train)
+    elif image_set == 'val':
+        root = Path(args.mot_path_val)
+    else:
+        ValueError(f'unknown {image_set}')
+
     assert root.exists(), f'provided MOT17Det path {root} does not exist'
 
     split = getattr(args, f"{image_set}_split")
