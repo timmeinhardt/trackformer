@@ -32,6 +32,7 @@ class Tracker:
         self.reid_score_thresh = tracker_cfg['reid_score_thresh']
         self.reid_greedy_matching = tracker_cfg['reid_greedy_matching']
         self.prev_frame_dist = tracker_cfg['prev_frame_dist']
+        self.steps_termination = tracker_cfg['steps_termination']
 
         if self.generate_attention_maps:
             assert hasattr(self.obj_detector.transformer.decoder.layers[-1], 'multihead_attn'), 'Generation of attention maps not possible for deformable DETR.'
@@ -328,13 +329,16 @@ class Tracker:
                     track.score = track_scores[i]
                     track.hs_embed.append(hs_embeds[i])
                     track.pos = track_boxes[i]
+                    track.count_termination = 0
 
                     if 'masks' in result:
                         track.mask = track_masks[i]
                     if self.generate_attention_maps:
                         track.attention_map = track_attention_maps[i]
                 else:
-                    tracks_to_inactive.append(track)
+                    track.count_termination += 1
+                    if track.count_termination >= self.steps_termination:
+                        tracks_to_inactive.append(track)
 
             track_keep = torch.logical_and(
                 track_scores > self.reid_score_thresh,
@@ -526,6 +530,7 @@ class Track(object):
         self.score = score
         self.ims = deque([])
         self.count_inactive = 0
+        self.count_termination = 0
         self.gt_id = None
         self.hs_embed = [hs_embed]
         self.mask = mask

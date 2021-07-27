@@ -34,6 +34,8 @@ tracker_cfg:
     detection_nms_thresh: 0.9
     # NMS theshold while tracking
     track_nms_thresh: 0.9
+    # number of consective steps a score has to be below track_obj_score_thresh for a track to be terminated
+    steps_termination: 1
     # distance of previous frame for multi-frame attention
     prev_frame_dist: 1
     # How many timesteps inactive tracks are kept and cosidered for reid
