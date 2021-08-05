@@ -69,6 +69,9 @@ def crop(image, target, region, overflow_boxes=False):
         if "boxes" in target:
             cropped_boxes = target['boxes'].reshape(-1, 2, 2)
             keep = torch.all(cropped_boxes[:, 1, :] > cropped_boxes[:, 0, :], dim=1)
+
+            # new area must be at least % of orginal area
+            # keep = target["area"] >= orig_area * 0.2
         else:
             keep = target['masks'].flatten(1).any(1)
 

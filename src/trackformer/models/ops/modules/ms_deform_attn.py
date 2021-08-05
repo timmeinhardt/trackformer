@@ -38,7 +38,7 @@ class MSDeformAttn(nn.Module):
         """
         super().__init__()
         if d_model % n_heads != 0:
-            raise ValueError('d_model must be divisible by n_heads, but got {} and {}'.format(d_model, n_heads))
+            raise ValueError(f'd_model must be divisible by n_heads, but got {d_model} and {n_heads}')
         _d_per_head = d_model // n_heads
         # you'd better set _d_per_head to a power of 2 which is more efficient in our CUDA implementation
         if not _is_power_of_2(_d_per_head):
@@ -108,7 +108,7 @@ class MSDeformAttn(nn.Module):
                                  + sampling_offsets / self.n_points * reference_points[:, :, None, :, None, 2:] * 0.5
         else:
             raise ValueError(
-                'Last dim of reference_points must be 2 or 4, but get {} instead.'.format(reference_points.shape[-1]))
+                f'Last dim of reference_points must be 2 or 4, but get {reference_points.shape[-1]} instead.')
         output = MSDeformAttnFunction.apply(
             value, input_spatial_shapes, input_level_start_index, sampling_locations, attention_weights, self.im2col_step)
         output = self.output_proj(output)

@@ -169,6 +169,9 @@ def train(args: Namespace) -> None:
                     resume_value = checkpoint_value.repeat(2)
                 elif 'multihead_attn' in k or 'self_attn' in k:
                     resume_value = checkpoint_value.repeat(num_dims * (2, ))
+                elif 'reference_points' in k and checkpoint_value.shape[0] * 2 == v.shape[0]:
+                    resume_value = v
+                    resume_value[:2] = checkpoint_value.clone()
                 elif 'linear1' in k or 'query_embed' in k:
                     if checkpoint_value.shape[1] * 2 == v.shape[1]:
                         # from hidden size 256 to 512
@@ -226,8 +229,9 @@ def train(args: Namespace) -> None:
         # RESUME OPTIM
         if not args.eval_only and args.resume_optim:
             if 'optimizer' in checkpoint:
-                for c_p, p in zip(checkpoint['optimizer']['param_groups'], param_dicts):
-                    c_p['lr'] = p['lr']
+                if args.overwrite_lrs:
+                    for c_p, p in zip(checkpoint['optimizer']['param_groups'], param_dicts):
+                        c_p['lr'] = p['lr']
 
                 optimizer.load_state_dict(checkpoint['optimizer'])
             if 'lr_scheduler' in checkpoint:
