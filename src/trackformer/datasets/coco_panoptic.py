@@ -13,7 +13,7 @@ from .coco import make_coco_transforms
 
 
 class CocoPanoptic:
-    def __init__(self, img_folder, ann_folder, ann_file, transforms=None, return_masks=True):
+    def __init__(self, img_folder, ann_folder, ann_file, transforms=None, norm_transforms=None, return_masks=True):
         with open(ann_file, 'r') as f:
             self.coco = json.load(f)
 
@@ -29,6 +29,7 @@ class CocoPanoptic:
         self.ann_folder = ann_folder
         self.ann_file = ann_file
         self.transforms = transforms
+        self.norm_transforms = norm_transforms
         self.return_masks = return_masks
 
     def __getitem__(self, idx):
@@ -64,6 +65,8 @@ class CocoPanoptic:
 
         if self.transforms is not None:
             img, target = self.transforms(img, target)
+        if self.norm_transforms is not None:
+            img, target = self.norm_transforms(img, target)
 
         return img, target
 
@@ -93,7 +96,8 @@ def build(image_set, args):
     ann_folder = ann_folder_root / f'{mode}_{img_folder}'
     ann_file = ann_folder_root / ann_file
 
+    transforms, norm_transforms = make_coco_transforms(image_set, args.img_transform, args.overflow_boxes)
     dataset = CocoPanoptic(img_folder_path, ann_folder, ann_file,
-                           transforms=make_coco_transforms(image_set), return_masks=args.masks)
+                           transforms=transforms, norm_transforms=norm_transforms, return_masks=args.masks)
 
     return dataset

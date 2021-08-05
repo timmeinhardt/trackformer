@@ -45,7 +45,7 @@ class MOT17Sequence(Dataset):
         self._train_folders = os.listdir(os.path.join(self._data_dir, 'train'))
         self._test_folders = os.listdir(os.path.join(self._data_dir, 'test'))
 
-        self.transforms = Compose(make_coco_transforms('val', img_transform))
+        self.transforms = Compose(make_coco_transforms('val', img_transform, overflow_boxes=True))
 
         self.data = []
         self.no_gt = True

@@ -35,7 +35,7 @@ class DemoSequence(Dataset):
         self._data_dir = Path(root_dir)
         assert self._data_dir.is_dir(), f'data_root_dir:{root_dir} does not exist.'
 
-        self.transforms = Compose(make_coco_transforms('val', img_transform))
+        self.transforms = Compose(make_coco_transforms('val', img_transform, overflow_boxes=True))
 
         self.data = self._sequence()
         self.no_gt = True

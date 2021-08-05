@@ -56,6 +56,7 @@ track_query_false_positive_prob: 0.1
 track_query_false_negative_prob: 0.4
 track_query_false_positive_eos_weight: true
 track_attention: false
+overflow_boxes: false
 # Segmentation
 masks: false
 # Matcher

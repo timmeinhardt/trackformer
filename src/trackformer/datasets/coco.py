@@ -9,6 +9,7 @@ import random
 from pathlib import Path
 
 import torch
+import torch.nn.functional as F
 import torch.utils.data
 import torchvision
 from pycocotools import mask as coco_mask
@@ -20,13 +21,13 @@ class CocoDetection(torchvision.datasets.CocoDetection):
 
     fields = ["labels", "area", "iscrowd", "boxes", "track_ids", "masks"]
 
-    def __init__(self,  img_folder, ann_file, transforms, return_masks,
-                 remove_no_obj_imgs=True, norm_transforms=None,
+    def __init__(self,  img_folder, ann_file, transforms, norm_transforms,
+                 return_masks=False, overflow_boxes=False, remove_no_obj_imgs=True,
                  prev_frame=False, prev_frame_rnd_augs=0.05, prev_prev_frame=False):
         super(CocoDetection, self).__init__(img_folder, ann_file)
         self._transforms = transforms
         self._norm_transforms = norm_transforms
-        self.prepare = ConvertCocoPolysToMask(return_masks)
+        self.prepare = ConvertCocoPolysToMask(return_masks, overflow_boxes)
 
         if remove_no_obj_imgs:
             self.ids = sorted(list(set(
@@ -173,8 +174,9 @@ def convert_coco_poly_to_mask(segmentations, height, width):
 
 
 class ConvertCocoPolysToMask(object):
-    def __init__(self, return_masks=False):
+    def __init__(self, return_masks=False, overflow_boxes=False):
         self.return_masks = return_masks
+        self.overflow_boxes = overflow_boxes
 
     def __call__(self, image, target):
         w, h = image.size
@@ -191,8 +193,9 @@ class ConvertCocoPolysToMask(object):
         boxes = torch.as_tensor(boxes, dtype=torch.float32).reshape(-1, 4)
         # x,y,w,h --> x,y,x,y
         boxes[:, 2:] += boxes[:, :2]
-        boxes[:, 0::2].clamp_(min=0, max=w)
-        boxes[:, 1::2].clamp_(min=0, max=h)
+        if not self.overflow_boxes:
+            boxes[:, 0::2].clamp_(min=0, max=w)
+            boxes[:, 1::2].clamp_(min=0, max=h)
 
         classes = [obj["category_id"] for obj in anno]
         classes = torch.tensor(classes, dtype=torch.int64)
@@ -249,7 +252,7 @@ class ConvertCocoPolysToMask(object):
         return image, target
 
 
-def make_coco_transforms(image_set, img_transform=None):
+def make_coco_transforms(image_set, img_transform=None, overflow_boxes=False):
     normalize = T.Compose([
         T.ToTensor(),
         T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
@@ -278,7 +281,7 @@ def make_coco_transforms(image_set, img_transform=None):
                 T.RandomResize(scales, max_size=max_size),
                 T.Compose([
                     T.RandomResize(random_resizes),
-                    T.RandomSizeCrop(*random_size_crop),
+                    T.RandomSizeCrop(*random_size_crop, overflow_boxes=overflow_boxes),
                     T.RandomResize(scales, max_size=max_size),
                 ])
             ),
@@ -306,13 +309,10 @@ def build(image_set, args, mode='instances'):
         "val": (root / "val2017", root / "annotations" / f'{mode}_val2017.json'),
     }
 
-    transforms, norm_transforms = make_coco_transforms(image_set, args.img_transform)
+    transforms, norm_transforms = make_coco_transforms(image_set, args.img_transform, args.overflow_boxes)
     img_folder, ann_file = splits[split]
     dataset = CocoDetection(
-        img_folder,
-        ann_file,
-        transforms=transforms,
-        norm_transforms=norm_transforms,
+        img_folder, ann_file, transforms, norm_transforms,
         return_masks=args.masks,
         prev_frame=args.tracking,
         prev_frame_rnd_augs=args.coco_and_crowdhuman_prev_frame_rnd_augs,

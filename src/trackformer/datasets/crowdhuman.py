@@ -17,12 +17,9 @@ def build_crowdhuman(image_set, args):
     ann_file = root / f'annotations/{split}.json'
 
     transforms, norm_transforms = make_coco_transforms(
-        image_set, args.img_transform)
+        image_set, args.img_transform, args.overflow_boxes)
     dataset = CocoDetection(
-        img_folder,
-        ann_file,
-        transforms=transforms,
-        norm_transforms=norm_transforms,
+        img_folder, ann_file, transforms, norm_transforms,
         return_masks=args.masks,
         prev_frame=args.tracking,
         prev_frame_rnd_augs=args.coco_and_crowdhuman_prev_frame_rnd_augs)

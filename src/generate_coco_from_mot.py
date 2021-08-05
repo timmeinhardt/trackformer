@@ -264,19 +264,20 @@ def generate_coco_from_mot(split_name='train', seqs_names=None,
         json.dump(annotations, anno_file, indent=4)
 
 
-def check_coco_from_mot(split='train', data_root='data/MOT17'):
+def check_coco_from_mot(coco_dir='data/MOT17/mot17_train_coco', annotation_file='data/MOT17/annotations/mot17_train_coco.json', img_id=None):
     """
     Visualize generated COCO data. Only used for debugging.
     """
-    coco_dir = os.path.join(data_root, split)
-    annotation_file = os.path.join(coco_dir, 'annotations.json')
+    # coco_dir = os.path.join(data_root, split)
+    # annotation_file = os.path.join(coco_dir, 'annotations.json')
 
     coco = COCO(annotation_file)
     cat_ids = coco.getCatIds(catNms=['pedestrian'])
-    img_ids = coco.getImgIds(catIds=cat_ids)
-
-    index = np.random.randint(0, len(img_ids))
-    img = coco.loadImgs(img_ids[index])[0]
+    if img_id == None:
+        img_ids = coco.getImgIds(catIds=cat_ids)
+        index = np.random.randint(0, len(img_ids))
+        img_id = img_ids[index]
+    img = coco.loadImgs(img_id)[0]
 
     i = io.imread(os.path.join(coco_dir, img['file_name']))
 
@@ -388,7 +389,7 @@ if __name__ == '__main__':
             seqs_names=['MOT17-02-FRCNN', 'MOT17-04-FRCNN', 'MOT17-05-FRCNN', 'MOT17-09-FRCNN', 'MOT17-10-FRCNN', 'MOT17-11-FRCNN', 'MOT17-13-FRCNN'],
             frame_range={'start': 0.75, 'end': 1.0})
 
-        TRAIN SET
+        # TRAIN SET
         generate_coco_from_mot(
             'mot17_train_coco',
             seqs_names=['MOT17-02-FRCNN', 'MOT17-04-FRCNN', 'MOT17-05-FRCNN', 'MOT17-09-FRCNN',

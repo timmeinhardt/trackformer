@@ -18,12 +18,8 @@ from .crowdhuman import build_crowdhuman
 
 class MOT(CocoDetection):
 
-    def __init__(self, img_folder, ann_file, transforms, return_masks,
-                 prev_frame=False, prev_frame_range=None, prev_frame_rnd_augs=0.0,
-                 prev_prev_frame=False, norm_transform=None):
-        super(MOT, self).__init__(
-            img_folder, ann_file, transforms, return_masks, False,
-            norm_transform, prev_frame, prev_frame_rnd_augs, prev_prev_frame)
+    def __init__(self, *args, prev_frame_range=None, **kwargs):
+        super(MOT, self).__init__(*args, **kwargs)
 
         self._prev_frame_range = prev_frame_range
 
@@ -143,17 +139,19 @@ def build_mot(image_set, args):
     ann_file = root / f"annotations/{split}.json"
 
     transforms, norm_transforms = make_coco_transforms(
-        image_set, args.img_transform)
+        image_set, args.img_transform, args.overflow_boxes)
+
 
     dataset = MOT(
-        img_folder, ann_file,
-        transforms=transforms,
-        norm_transform=norm_transforms,
-        return_masks=args.masks,
-        prev_frame=args.tracking,
+        img_folder, ann_file, transforms, norm_transforms,
         prev_frame_range=args.track_prev_frame_range,
+        return_masks=args.masks,
+        overflow_boxes=args.overflow_boxes,
+        remove_no_obj_imgs=False,
+        prev_frame=args.tracking,
         prev_frame_rnd_augs=args.track_prev_frame_rnd_augs,
-        prev_prev_frame=args.track_prev_prev_frame)
+        prev_prev_frame=args.track_prev_prev_frame,
+        )
 
     return dataset
 

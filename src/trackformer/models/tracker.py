@@ -305,7 +305,8 @@ class Tracker:
         if 'masks' in result:
             result['masks'] = result['masks'].squeeze(dim=1)
 
-        boxes = clip_boxes_to_image(result['boxes'], orig_size[0])
+        # boxes = clip_boxes_to_image(result['boxes'], orig_size[0])
+        boxes = result['boxes']
 
         # TRACKS
         if num_prev_track:
@@ -496,7 +497,8 @@ class Tracker:
                 self.results[track.id] = {}
 
             self.results[track.id][self.frame_index] = {}
-            self.results[track.id][self.frame_index]['bbox'] = track.pos.cpu().numpy()
+            self.results[track.id][self.frame_index]['bbox'] = clip_boxes_to_image(track.pos, orig_size[0]).cpu().numpy()
+            # self.results[track.id][self.frame_index]['bbox'] = track.pos.cpu().numpy()
             self.results[track.id][self.frame_index]['score'] = track.score.cpu().numpy()
 
             if track.mask is not None:

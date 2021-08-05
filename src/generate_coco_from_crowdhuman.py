@@ -108,6 +108,8 @@ def generate_coco_from_crowdhuman():
 
 
 if __name__ == '__main__':
-    generate_coco_from_crowdhuman()
+    # generate_coco_from_crowdhuman()
 
-    # check_coco_from_mot('train')
+    coco_dir = os.path.join('data/CrowdHuman', 'train_val')
+    annotation_file = os.path.join('data/CrowdHuman/annotations', 'train_val.json')
+    check_coco_from_mot(coco_dir, annotation_file, img_id=9012)
