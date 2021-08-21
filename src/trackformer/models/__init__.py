@@ -36,7 +36,8 @@ def build_model(args):
     tracking_kwargs = {
         'track_query_false_positive_prob': args.track_query_false_positive_prob,
         'track_query_false_negative_prob': args.track_query_false_negative_prob,
-        'matcher': matcher,}
+        'matcher': matcher,
+        'backprop_prev_frame': args.track_backprop_prev_frame}
 
     mask_kwargs = {
         'freeze_detr': args.freeze_detr}

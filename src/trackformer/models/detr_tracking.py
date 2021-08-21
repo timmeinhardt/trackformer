@@ -1,4 +1,5 @@
 import random
+from contextlib import nullcontext
 
 import torch
 import torch.nn as nn
@@ -15,10 +16,12 @@ class DETRTrackingBase(nn.Module):
     def __init__(self,
                  track_query_false_positive_prob: float = 0.0,
                  track_query_false_negative_prob: float = 0.0,
-                 matcher: HungarianMatcher = None):
+                 matcher: HungarianMatcher = None,
+                 backprop_prev_frame=False):
         self._matcher = matcher
         self._track_query_false_positive_prob = track_query_false_positive_prob
         self._track_query_false_negative_prob = track_query_false_negative_prob
+        self._backprop_prev_frame = backprop_prev_frame
 
         self._tracking = False
 
@@ -131,35 +134,40 @@ class DETRTrackingBase(nn.Module):
         if targets is not None and not self._tracking:
             prev_targets = [target['prev_target'] for target in targets]
 
-            if 'prev_prev_image' in targets[0]:
-                for target, prev_target in zip(targets, prev_targets):
-                    prev_target['prev_target'] = target['prev_prev_target']
+            backprop_context = torch.no_grad
+            if self._backprop_prev_frame:
+                backprop_context = nullcontext
 
-                prev_prev_targets = [target['prev_prev_target'] for target in targets]
+            with backprop_context():
+                if 'prev_prev_image' in targets[0]:
+                    for target, prev_target in zip(targets, prev_targets):
+                        prev_target['prev_target'] = target['prev_prev_target']
 
-                # PREV PREV
-                prev_prev_out, _, prev_prev_features, _, _ = super().forward([t['prev_prev_image'] for t in targets])
+                    prev_prev_targets = [target['prev_prev_target'] for target in targets]
 
-                prev_prev_outputs_without_aux = {
-                    k: v for k, v in prev_prev_out.items() if 'aux_outputs' not in k}
-                prev_prev_indices = self._matcher(prev_prev_outputs_without_aux, prev_prev_targets)
+                    # PREV PREV
+                    prev_prev_out, _, prev_prev_features, _, _ = super().forward([t['prev_prev_image'] for t in targets])
 
-                self.add_track_queries_to_targets(
-                    prev_targets, prev_prev_indices, prev_prev_out, add_false_pos=False)
+                    prev_prev_outputs_without_aux = {
+                        k: v for k, v in prev_prev_out.items() if 'aux_outputs' not in k}
+                    prev_prev_indices = self._matcher(prev_prev_outputs_without_aux, prev_prev_targets)
 
-                # PREV
-                prev_out, _, prev_features, _, _ = super().forward(
-                    [t['prev_image'] for t in targets],
-                    prev_targets,
-                    prev_prev_features)
-            else:
-                prev_out, _, prev_features, _, _ = super().forward([t['prev_image'] for t in targets])
+                    self.add_track_queries_to_targets(
+                        prev_targets, prev_prev_indices, prev_prev_out, add_false_pos=False)
 
-            prev_outputs_without_aux = {
-                k: v for k, v in prev_out.items() if 'aux_outputs' not in k}
-            prev_indices = self._matcher(prev_outputs_without_aux, prev_targets)
+                    # PREV
+                    prev_out, _, prev_features, _, _ = super().forward(
+                        [t['prev_image'] for t in targets],
+                        prev_targets,
+                        prev_prev_features)
+                else:
+                    prev_out, _, prev_features, _, _ = super().forward([t['prev_image'] for t in targets])
 
-            self.add_track_queries_to_targets(targets, prev_indices, prev_out)
+                prev_outputs_without_aux = {
+                    k: v for k, v in prev_out.items() if 'aux_outputs' not in k}
+                prev_indices = self._matcher(prev_outputs_without_aux, prev_targets)
+
+                self.add_track_queries_to_targets(targets, prev_indices, prev_out)
 
         out, targets, features, memory, hs  = super().forward(samples, targets, prev_features)
 
