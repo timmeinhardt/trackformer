@@ -102,9 +102,10 @@ def build_model(args):
         weight_dict=weight_dict,
         eos_coef=args.eos_coef,
         losses=losses,
-        track_query_false_positive_eos_weight=args.track_query_false_positive_eos_weight,
         focal_loss=args.focal_loss,
-        focal_alpha=args.focal_alpha)
+        focal_alpha=args.focal_alpha,
+        tracking=args.tracking,
+        track_query_false_positive_eos_weight=args.track_query_false_positive_eos_weight,)
     criterion.to(device)
 
     if args.focal_loss:

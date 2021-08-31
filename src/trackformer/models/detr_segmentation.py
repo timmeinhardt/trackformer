@@ -222,7 +222,7 @@ class PostProcessSegm(nn.Module):
         self.threshold = threshold
 
     @torch.no_grad()
-    def forward(self, results, outputs, orig_target_sizes, max_target_sizes, return_probs=False):
+    def forward(self, results, outputs, orig_target_sizes, max_target_sizes, return_probs=False, results_mask=None):
         assert len(orig_target_sizes) == len(max_target_sizes)
         max_h, max_w = max_target_sizes.max(0)[0].tolist()
         outputs_masks = outputs["pred_masks"].squeeze(2)
@@ -239,13 +239,16 @@ class PostProcessSegm(nn.Module):
         zip_iter = zip(outputs_masks, max_target_sizes, orig_target_sizes)
         for i, (cur_mask, t, tt) in enumerate(zip_iter):
             img_h, img_w = t[0], t[1]
-            results[i]["masks"] = cur_mask[:, :img_h, :img_w].unsqueeze(1)
-            results[i]["masks"] = F.interpolate(
-                results[i]["masks"].float(), size=tuple(tt.tolist()), mode="nearest"
-            )
+            masks = cur_mask[:, :img_h, :img_w].unsqueeze(1)
+            masks = F.interpolate(masks.float(), size=tuple(tt.tolist()), mode="nearest")
 
             if not return_probs:
-                results[i]["masks"] = results[i]["masks"].byte()
+                masks = masks.byte()
+
+            if results_mask is not None:
+                masks = masks[results_mask[i]]
+
+            results[i]["masks"] = masks
 
         return results
 

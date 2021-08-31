@@ -118,7 +118,9 @@ class HungarianMatcher(nn.Module):
                     cost_matrix[i, j] = np.inf
                     cost_matrix[i, :, track_query_id + sum(sizes[:i])] = np.inf
                     cost_matrix[i, j, track_query_id + sum(sizes[:i])] = -1
-                elif mask_value.item() == -1:
+                elif mask_value.item() < 0:
+                    # false positive and palceholder track queries should not
+                    # be matched to any target
                     cost_matrix[i, j] = np.inf
 
         indices = [linear_sum_assignment(c[i])

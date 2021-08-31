@@ -25,17 +25,24 @@ def make_results(outputs, targets, postprocessors, tracking, return_only_orig=Tr
     target_sizes = torch.stack([t["size"] for t in targets], dim=0)
     orig_target_sizes = torch.stack([t["orig_size"] for t in targets], dim=0)
 
+    # remove placeholder track queries
+    if tracking:
+        results_mask = [t['track_queries_match_mask'].ne(-2.0) for t in targets]
+        for target in targets:
+            track_queries_match_mask = target['track_queries_match_mask']
+            target['track_queries_match_mask'] = track_queries_match_mask[track_queries_match_mask.ne(-2.0)]
+
     results = None
     if not return_only_orig:
-        results = postprocessors['bbox'](outputs, target_sizes)
-    results_orig = postprocessors['bbox'](outputs, orig_target_sizes)
+        results = postprocessors['bbox'](outputs, target_sizes, results_mask)
+    results_orig = postprocessors['bbox'](outputs, orig_target_sizes, results_mask)
 
     if 'segm' in postprocessors:
         results_orig = postprocessors['segm'](
-            results_orig, outputs, orig_target_sizes, target_sizes)
+            results_orig, outputs, orig_target_sizes, target_sizes, results_mask)
         if not return_only_orig:
             results = postprocessors['segm'](
-                results, outputs, target_sizes, target_sizes)
+                results, outputs, target_sizes, target_sizes, results_mask)
 
     if results is None:
         return results_orig, results

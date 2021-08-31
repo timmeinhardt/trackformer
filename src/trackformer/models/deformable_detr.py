@@ -244,7 +244,7 @@ class DeformablePostProcess(PostProcess):
     """ This module converts the model's output into the format expected by the coco api"""
 
     @torch.no_grad()
-    def forward(self, outputs, target_sizes):
+    def forward(self, outputs, target_sizes, results_mask=None):
         """ Perform the computation
         Parameters:
             outputs: raw outputs of the model
@@ -281,5 +281,10 @@ class DeformablePostProcess(PostProcess):
         results = [
             {'scores': s, 'scores_no_object': 1 - s, 'labels': l, 'boxes': b}
             for s, l, b in zip(scores, labels, boxes)]
+
+        if results_mask is not None:
+            for i, mask in enumerate(results_mask):
+                for k, v in results[i].items():
+                    results[i][k] = v[mask]
 
         return results

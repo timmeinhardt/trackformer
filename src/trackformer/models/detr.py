@@ -140,7 +140,7 @@ class SetCriterion(nn.Module):
         2) we supervise each pair of matched ground-truth / prediction (supervise class and box)
     """
     def __init__(self, num_classes, matcher, weight_dict, eos_coef, losses,
-                 track_query_false_positive_eos_weight, focal_loss, focal_alpha):
+                 focal_loss, focal_alpha, tracking, track_query_false_positive_eos_weight):
         """ Create the criterion.
         Parameters:
             num_classes: number of object categories, omitting the special no-object category
@@ -160,9 +160,10 @@ class SetCriterion(nn.Module):
         empty_weight = torch.ones(self.num_classes + 1)
         empty_weight[-1] = self.eos_coef
         self.register_buffer('empty_weight', empty_weight)
-        self.track_query_false_positive_eos_weight = track_query_false_positive_eos_weight
         self.focal_loss = focal_loss
         self.focal_alpha = focal_alpha
+        self.tracking = tracking
+        self.track_query_false_positive_eos_weight = track_query_false_positive_eos_weight
 
     def loss_labels(self, outputs, targets, indices, _, log=True):
         """Classification loss (NLL)
@@ -184,7 +185,7 @@ class SetCriterion(nn.Module):
                                   weight=self.empty_weight,
                                   reduction='none')
 
-        if self.track_query_false_positive_eos_weight:
+        if self.tracking and self.track_query_false_positive_eos_weight:
             for i, target in enumerate(targets):
                 if 'track_query_boxes' in target:
                     # remove no-object weighting for false track_queries
@@ -192,6 +193,11 @@ class SetCriterion(nn.Module):
                     # assign false track_queries to some object class for the final weighting
                     target_classes = target_classes.clone()
                     target_classes[i, targets[i]['track_queries_match_mask'] == -1] = 0
+
+        weight = None
+        if self.tracking:
+            weight = torch.stack([t['track_queries_match_mask'].ne(-2.0).float() for t in targets])
+            loss_ce *= weight
 
         loss_ce = loss_ce.sum() / self.empty_weight[target_classes].sum()
 
@@ -221,7 +227,12 @@ class SetCriterion(nn.Module):
 
         target_classes_onehot = target_classes_onehot[:,:,:-1]
 
-        loss_ce = sigmoid_focal_loss(src_logits, target_classes_onehot, num_boxes, alpha=self.focal_alpha, gamma=2) * src_logits.shape[1]
+        weight = None
+        if self.tracking:
+            weight = torch.stack([t['track_queries_match_mask'].ne(-2.0).float()[..., None] for t in targets])
+
+        loss_ce = sigmoid_focal_loss(src_logits, target_classes_onehot, num_boxes, alpha=self.focal_alpha, gamma=2, weight=weight)
+        loss_ce *= src_logits.shape[1]
         losses = {'loss_ce': loss_ce}
 
         if log:
@@ -396,7 +407,7 @@ class PostProcess(nn.Module):
         return boxes
 
     @torch.no_grad()
-    def forward(self, outputs, target_sizes):
+    def forward(self, outputs, target_sizes, results_mask=None):
         """ Perform the computation
         Parameters:
             outputs: raw outputs of the model
@@ -416,9 +427,15 @@ class PostProcess(nn.Module):
 
         boxes = self.process_boxes(out_bbox, target_sizes)
 
+
         results = [
             {'scores': s, 'labels': l, 'boxes': b, 'scores_no_object': s_n_o}
             for s, l, b, s_n_o in zip(scores, labels, boxes, prob[..., -1])]
+
+        if results_mask is not None:
+            for i, mask in enumerate(results_mask):
+                for k, v in results[i].items():
+                    results[i][k] = v[mask]
 
         return results
 

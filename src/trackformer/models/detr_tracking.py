@@ -38,8 +38,6 @@ class DETRTrackingBase(nn.Module):
         self._tracking = True
 
     def add_track_queries_to_targets(self, targets, prev_indices, prev_out, add_false_pos=True):
-        prev_out_inds = []
-
         for i, (target, prev_ind) in enumerate(zip(targets, prev_indices)):
             prev_out_ind, prev_target_ind = prev_ind
 
@@ -99,7 +97,7 @@ class DETRTrackingBase(nn.Module):
 
                 prev_out_ind = torch.tensor(prev_out_ind.tolist() + random_false_out_ind).long()
                 target_ind_matching = torch.tensor(
-                    target_ind_matching.tolist() + [False, ] * len(random_false_out_ind)).bool()
+                    target_ind_matching.tolist() + [False, ] * len(random_false_out_ind)).bool().to(target_ind_matching.device)
 
             track_queries_match_mask = torch.ones_like(target_ind_matching).float()
 
@@ -110,9 +108,8 @@ class DETRTrackingBase(nn.Module):
             target['track_query_hs_embeds'] = prev_out['hs_embed'][i, prev_out_ind]
             target['track_query_boxes'] = prev_out['pred_boxes'][i, prev_out_ind].detach()
             target['track_queries_match_mask'] = track_queries_match_mask
-            prev_out_inds.append(prev_out_ind)
 
-        # add random false positives to allow for batch sizes > 1
+        # add placeholder track queries to allow for batch sizes > 1
         max_track_query_hs_embeds = max([len(t['track_query_hs_embeds']) for t in targets])
         for i, target in enumerate(targets):
 
@@ -121,24 +118,16 @@ class DETRTrackingBase(nn.Module):
             if not num_add:
                 continue
 
-            not_prev_out_ind = torch.tensor([
-                ind
-                for ind in torch.arange(prev_out['pred_boxes'].shape[1])
-                if ind not in prev_out_inds[i]])
-
-            false_samples_inds = torch.randperm(not_prev_out_ind.size(0))[:num_add]
-            false_samples = not_prev_out_ind[false_samples_inds]
-
+            device = target['track_queries_match_mask'].device
             target['track_query_hs_embeds'] = torch.cat(
                 [target['track_query_hs_embeds'],
-                    prev_out['hs_embed'][i, false_samples]])
+                 torch.zeros(num_add, self.hidden_dim).to(device)])
             target['track_query_boxes'] = torch.cat(
                 [target['track_query_boxes'],
-                    prev_out['pred_boxes'][i, false_samples].detach()])
+                 torch.zeros(num_add, 4).to(device)])
 
-            device = target['track_queries_match_mask'].device
             track_queries_match_mask = torch.tensor(
-                target['track_queries_match_mask'].tolist() + [-1.0, ] * num_add)
+                target['track_queries_match_mask'].tolist() + [-2.0, ] * num_add)
             target['track_queries_match_mask'] = track_queries_match_mask.to(device)
 
         # add zeros to track_queries_match_mask for detection object queries
@@ -147,21 +136,6 @@ class DETRTrackingBase(nn.Module):
             track_queries_match_mask = torch.tensor(
                 target['track_queries_match_mask'].tolist() + [0, ] * self.num_queries)
             target['track_queries_match_mask'] = track_queries_match_mask.to(device)
-
-        # adjust number of track queries to allow for batch sizes > 1
-        # min_track_query_hs_embeds = min([len(t['track_query_hs_embeds']) for t in targets])
-        # for i, t in enumerate(targets):
-
-        #     num_remove = len(t['track_query_hs_embeds']) - min_track_query_hs_embeds
-
-        #     if num_remove:
-        #         num_match_ids_remove = t['track_queries_match_mask'][:num_remove].eq(1.0).sum()
-
-        #         t['track_queries_match_mask'] = t['track_queries_match_mask'][num_remove:]
-        #         t['track_query_hs_embeds'] = t['track_query_hs_embeds'][num_remove:]
-        #         t['track_query_boxes'] = t['track_query_boxes'][num_remove:]
-
-        #         t['track_query_match_ids'] = t['track_query_match_ids'][num_match_ids_remove:]
 
     def forward(self, samples: NestedTensor, targets: list = None, prev_features=None):
         if targets is not None and not self._tracking:
