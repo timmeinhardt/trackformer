@@ -38,6 +38,8 @@ class DETRTrackingBase(nn.Module):
         self._tracking = True
 
     def add_track_queries_to_targets(self, targets, prev_indices, prev_out, add_false_pos=True):
+        device = prev_out['pred_boxes'].device
+
         for i, (target, prev_ind) in enumerate(zip(targets, prev_indices)):
             prev_out_ind, prev_target_ind = prev_ind
 
@@ -96,8 +98,11 @@ class DETRTrackingBase(nn.Module):
                             random_false_out_ind.append(random_false_out_idx)
 
                 prev_out_ind = torch.tensor(prev_out_ind.tolist() + random_false_out_ind).long()
-                target_ind_matching = torch.tensor(
-                    target_ind_matching.tolist() + [False, ] * len(random_false_out_ind)).bool().to(target_ind_matching.device)
+
+                target_ind_matching = torch.cat([
+                    target_ind_matching,
+                    torch.tensor([False, ] * len(random_false_out_ind)).bool().to(device)
+                ])
 
             track_queries_match_mask = torch.ones_like(target_ind_matching).float()
 
@@ -107,7 +112,11 @@ class DETRTrackingBase(nn.Module):
             # set prev frame info
             target['track_query_hs_embeds'] = prev_out['hs_embed'][i, prev_out_ind]
             target['track_query_boxes'] = prev_out['pred_boxes'][i, prev_out_ind].detach()
-            target['track_queries_match_mask'] = track_queries_match_mask
+
+            target['track_queries_match_mask'] = torch.cat([
+                track_queries_match_mask,
+                torch.tensor([0.0, ] * self.num_queries).to(device)
+            ])
 
         # add placeholder track queries to allow for batch sizes > 1
         max_track_query_hs_embeds = max([len(t['track_query_hs_embeds']) for t in targets])
@@ -116,26 +125,25 @@ class DETRTrackingBase(nn.Module):
             num_add = max_track_query_hs_embeds - len(target['track_query_hs_embeds'])
 
             if not num_add:
+                target['track_queries_placeholder_mask'] = torch.zeros_like(target['track_queries_match_mask']).bool()
                 continue
 
-            device = target['track_queries_match_mask'].device
             target['track_query_hs_embeds'] = torch.cat(
-                [target['track_query_hs_embeds'],
-                 torch.zeros(num_add, self.hidden_dim).to(device)])
+                [torch.zeros(num_add, self.hidden_dim).to(device),
+                 target['track_query_hs_embeds']
+            ])
             target['track_query_boxes'] = torch.cat(
-                [target['track_query_boxes'],
-                 torch.zeros(num_add, 4).to(device)])
+                [torch.zeros(num_add, 4).to(device),
+                 target['track_query_boxes']
+            ])
 
-            track_queries_match_mask = torch.tensor(
-                target['track_queries_match_mask'].tolist() + [-2.0, ] * num_add)
-            target['track_queries_match_mask'] = track_queries_match_mask.to(device)
+            target['track_queries_match_mask'] = torch.cat([
+                torch.tensor([-2.0, ] * num_add).to(device),
+                target['track_queries_match_mask']
+            ])
 
-        # add zeros to track_queries_match_mask for detection object queries
-        for target in targets:
-            device = target['track_queries_match_mask'].device
-            track_queries_match_mask = torch.tensor(
-                target['track_queries_match_mask'].tolist() + [0, ] * self.num_queries)
-            target['track_queries_match_mask'] = track_queries_match_mask.to(device)
+            target['track_queries_placeholder_mask'] = torch.zeros_like(target['track_queries_match_mask']).bool()
+            target['track_queries_placeholder_mask'][:num_add] = True
 
     def forward(self, samples: NestedTensor, targets: list = None, prev_features=None):
         if targets is not None and not self._tracking:

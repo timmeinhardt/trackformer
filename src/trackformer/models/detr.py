@@ -196,7 +196,7 @@ class SetCriterion(nn.Module):
 
         weight = None
         if self.tracking:
-            weight = torch.stack([t['track_queries_match_mask'].ne(-2.0).float() for t in targets])
+            weight = torch.stack([~t['track_queries_placeholder_mask'] for t in targets]).float()
             loss_ce *= weight
 
         loss_ce = loss_ce.sum() / self.empty_weight[target_classes].sum()
@@ -229,7 +229,7 @@ class SetCriterion(nn.Module):
 
         weight = None
         if self.tracking:
-            weight = torch.stack([t['track_queries_match_mask'].ne(-2.0).float()[..., None] for t in targets])
+            weight = torch.stack([~t['track_queries_placeholder_mask'] for t in targets]).float()[..., None]
 
         loss_ce = sigmoid_focal_loss(src_logits, target_classes_onehot, num_boxes, alpha=self.focal_alpha, gamma=2, weight=weight)
         loss_ce *= src_logits.shape[1]

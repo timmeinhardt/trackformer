@@ -26,11 +26,11 @@ def make_results(outputs, targets, postprocessors, tracking, return_only_orig=Tr
     orig_target_sizes = torch.stack([t["orig_size"] for t in targets], dim=0)
 
     # remove placeholder track queries
+    results_mask = None
     if tracking:
-        results_mask = [t['track_queries_match_mask'].ne(-2.0) for t in targets]
-        for target in targets:
-            track_queries_match_mask = target['track_queries_match_mask']
-            target['track_queries_match_mask'] = track_queries_match_mask[track_queries_match_mask.ne(-2.0)]
+        results_mask = [~t['track_queries_placeholder_mask'] for t in targets]
+        for target, res_mask in zip(targets, results_mask):
+            target['track_queries_match_mask'] = target['track_queries_match_mask'][res_mask]
 
     results = None
     if not return_only_orig:

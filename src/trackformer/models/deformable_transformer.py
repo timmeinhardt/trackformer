@@ -192,8 +192,8 @@ class DeformableTransformer(nn.Module):
 
                 reference_points = torch.cat([prev_boxes[..., :2], reference_points], dim=1)
 
-                if 'track_queries_match_mask' in targets[0]:
-                    query_attn_mask = torch.stack([t['track_queries_match_mask'].eq(-2.0) for t in targets])
+                if 'track_queries_placeholder_mask' in targets[0]:
+                    query_attn_mask = torch.stack([t['track_queries_placeholder_mask'] for t in targets])
 
             init_reference_out = reference_points
 
