@@ -225,12 +225,17 @@ class SetCriterion(nn.Module):
 
         target_classes_onehot = target_classes_onehot[:,:,:-1]
 
-        weight = None
+        query_mask = None
         if self.tracking:
-            weight = torch.stack([~t['track_queries_placeholder_mask'] for t in targets]).float()[..., None]
+            query_mask = torch.stack([~t['track_queries_placeholder_mask'] for t in targets])[..., None]
 
-        loss_ce = sigmoid_focal_loss(src_logits, target_classes_onehot, num_boxes, alpha=self.focal_alpha, gamma=2, weight=weight)
-        loss_ce *= src_logits.shape[1]
+        loss_ce = sigmoid_focal_loss(src_logits, target_classes_onehot, num_boxes, alpha=self.focal_alpha, gamma=2, query_mask=query_mask)
+
+        if self.tracking:
+            mean_num_queries = torch.tensor([len(m.nonzero()) for m in query_mask]).float().mean()
+            loss_ce *= mean_num_queries
+        else:
+            loss_ce *= src_logits.shape[1]
         losses = {'loss_ce': loss_ce}
 
         if log:

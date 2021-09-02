@@ -111,15 +111,11 @@ class HungarianMatcher(nn.Module):
 
             prop_i = 0
             for j in range(cost_matrix.shape[1]):
-                is_track_query = target['track_queries_match_mask'][j]
-                is_fal_pos_track_query = target['track_queries_fal_pos_mask'][j]
-                is_placeholder_track_query = target['track_queries_placeholder_mask'][j]
-
-                if is_fal_pos_track_query or is_placeholder_track_query:
+                if target['track_queries_fal_pos_mask'][j] or target['track_queries_placeholder_mask'][j]:
                     # false positive and palceholder track queries should not
                     # be matched to any target
                     cost_matrix[i, j] = np.inf
-                elif is_track_query:
+                elif target['track_queries_mask'][j]:
                     track_query_id = target['track_query_match_ids'][prop_i]
                     prop_i += 1
 

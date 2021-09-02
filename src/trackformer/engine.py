@@ -30,7 +30,7 @@ def make_results(outputs, targets, postprocessors, tracking, return_only_orig=Tr
     if tracking:
         results_mask = [~t['track_queries_placeholder_mask'] for t in targets]
         for target, res_mask in zip(targets, results_mask):
-            target['track_queries_match_mask'] = target['track_queries_match_mask'][res_mask]
+            target['track_queries_mask'] = target['track_queries_mask'][res_mask]
             target['track_queries_fal_pos_mask'] = target['track_queries_fal_pos_mask'][res_mask]
 
     results = None
@@ -75,10 +75,11 @@ def make_results(outputs, targets, postprocessors, tracking, return_only_orig=Tr
                 track_queries_iou, _ = box_iou(
                     target['boxes'][target['track_query_match_ids']],
                     result['boxes'])
-                track_queries_match_mask = target['track_queries_match_mask']
 
-                box_ids = [box_id for box_id, mask_value in enumerate(track_queries_match_mask == 1)
-                           if mask_value]
+                box_ids = [box_id
+                    for box_id, (is_track_query, is_fals_pos_track_query)
+                    in enumerate(zip(target['track_queries_mask'], target['track_queries_fal_pos_mask']))
+                    if is_track_query and not is_fals_pos_track_query]
 
                 result['track_queries_with_id_iou'] = torch.diagonal(track_queries_iou[:, box_ids])
 

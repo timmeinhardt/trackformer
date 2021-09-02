@@ -104,19 +104,19 @@ class DETRTrackingBase(nn.Module):
                     torch.tensor([False, ] * len(random_false_out_ind)).bool().to(device)
                 ])
 
-            track_queries_match_mask = torch.ones_like(target_ind_matching).bool()
+            track_queries_mask = torch.ones_like(target_ind_matching).bool()
             track_queries_fal_pos_mask = torch.zeros_like(target_ind_matching).bool()
             track_queries_fal_pos_mask[~target_ind_matching] = True
 
             # matches indices with 1.0 and not matched -1.0
-            # track_queries_match_mask[~target_ind_matching] = -1.0
+            # track_queries_mask[~target_ind_matching] = -1.0
 
             # set prev frame info
             target['track_query_hs_embeds'] = prev_out['hs_embed'][i, prev_out_ind]
             target['track_query_boxes'] = prev_out['pred_boxes'][i, prev_out_ind].detach()
 
-            target['track_queries_match_mask'] = torch.cat([
-                track_queries_match_mask,
+            target['track_queries_mask'] = torch.cat([
+                track_queries_mask,
                 torch.tensor([False, ] * self.num_queries).to(device)
             ]).bool()
 
@@ -132,7 +132,7 @@ class DETRTrackingBase(nn.Module):
             num_add = max_track_query_hs_embeds - len(target['track_query_hs_embeds'])
 
             if not num_add:
-                target['track_queries_placeholder_mask'] = torch.zeros_like(target['track_queries_match_mask']).bool()
+                target['track_queries_placeholder_mask'] = torch.zeros_like(target['track_queries_mask']).bool()
                 continue
 
             target['track_query_hs_embeds'] = torch.cat(
@@ -144,9 +144,9 @@ class DETRTrackingBase(nn.Module):
                  target['track_query_boxes']
             ])
 
-            target['track_queries_match_mask'] = torch.cat([
+            target['track_queries_mask'] = torch.cat([
                 torch.tensor([True, ] * num_add).to(device),
-                target['track_queries_match_mask']
+                target['track_queries_mask']
             ]).bool()
 
             target['track_queries_fal_pos_mask'] = torch.cat([
@@ -154,7 +154,7 @@ class DETRTrackingBase(nn.Module):
                 target['track_queries_fal_pos_mask']
             ]).bool()
 
-            target['track_queries_placeholder_mask'] = torch.zeros_like(target['track_queries_match_mask']).bool()
+            target['track_queries_placeholder_mask'] = torch.zeros_like(target['track_queries_mask']).bool()
             target['track_queries_placeholder_mask'][:num_add] = True
 
     def forward(self, samples: NestedTensor, targets: list = None, prev_features=None):

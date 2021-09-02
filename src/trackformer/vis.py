@@ -143,24 +143,21 @@ def vis_results(visualizer, img, result, target, tracking):
 
     prop_i = 0
     for box_id in range(len(keep)):
-        is_track_query = is_fal_pos_track_query = False
-        if tracking:
-            is_track_query = target['track_queries_match_mask'][box_id]
-            is_fal_pos_track_query = target['track_queries_fal_pos_mask'][box_id]
-
         rect_color = 'green'
         offset = 0
         text = f"{result['scores'][box_id]:0.2f}"
-        if is_fal_pos_track_query:
-            rect_color = 'red'
-        elif is_track_query:
-            offset = 50
-            rect_color = 'blue'
-            text = (
-                f"{track_ids[prop_i]}\n"
-                f"{text}\n"
-                f"{result['track_queries_with_id_iou'][prop_i]:0.2f}")
-            prop_i += 1
+
+        if tracking:
+            if target['track_queries_fal_pos_mask'][box_id]:
+                rect_color = 'red'
+            elif target['track_queries_mask'][box_id]:
+                offset = 50
+                rect_color = 'blue'
+                text = (
+                    f"{track_ids[prop_i]}\n"
+                    f"{text}\n"
+                    f"{result['track_queries_with_id_iou'][prop_i]:0.2f}")
+                prop_i += 1
 
         if not keep[box_id]:
             continue
@@ -186,20 +183,29 @@ def vis_results(visualizer, img, result, target, tracking):
 
     query_keep = keep
     if tracking:
-        query_keep = keep[target['track_queries_match_mask'] == 0]
+        query_keep = keep[target['track_queries_mask'] == 0]
 
     legend_handles = [mpatches.Patch(
         color='green',
         label=f"object queries ({query_keep.sum()}/{len(target['boxes']) - num_track_queries_with_id})\n- cls_score")]
 
     if num_track_queries:
+        track_queries_label = (
+            f"track queries ({keep[target['track_queries_mask']].sum() - keep[target['track_queries_fal_pos_mask']].sum()}"
+            f"/{num_track_queries_with_id})\n- track_id\n- cls_score\n- iou")
+
         legend_handles.append(mpatches.Patch(
             color='blue',
-            label=f"track queries ({keep[target['track_queries_match_mask'] == 1].sum()}/{num_track_queries_with_id})\n- track_id\n- cls_score\n- iou"))
+            label=track_queries_label))
+
     if num_track_queries_with_id != num_track_queries:
+        track_queries_fal_pos_label = (
+            f"false track queries ({keep[target['track_queries_fal_pos_mask']].sum()}"
+            f"/{num_track_queries - num_track_queries_with_id})")
+
         legend_handles.append(mpatches.Patch(
             color='red',
-            label=f"false track queries ({keep[target['track_queries_match_mask'] == -1].sum()}/{num_track_queries - num_track_queries_with_id})"))
+            label=track_queries_fal_pos_label))
 
     axarr[0].legend(handles=legend_handles)
 
