@@ -143,14 +143,17 @@ def vis_results(visualizer, img, result, target, tracking):
 
     prop_i = 0
     for box_id in range(len(keep)):
-        mask_value = 0
+        is_track_query = is_fal_pos_track_query = False
         if tracking:
-            mask_value = target['track_queries_match_mask'][box_id].item()
+            is_track_query = target['track_queries_match_mask'][box_id]
+            is_fal_pos_track_query = target['track_queries_fal_pos_mask'][box_id]
 
         rect_color = 'green'
         offset = 0
         text = f"{result['scores'][box_id]:0.2f}"
-        if mask_value == 1:
+        if is_fal_pos_track_query:
+            rect_color = 'red'
+        elif is_track_query:
             offset = 50
             rect_color = 'blue'
             text = (
@@ -158,8 +161,6 @@ def vis_results(visualizer, img, result, target, tracking):
                 f"{text}\n"
                 f"{result['track_queries_with_id_iou'][prop_i]:0.2f}")
             prop_i += 1
-        elif mask_value == -1:
-            rect_color = 'red'
 
         if not keep[box_id]:
             continue

@@ -104,10 +104,12 @@ class DETRTrackingBase(nn.Module):
                     torch.tensor([False, ] * len(random_false_out_ind)).bool().to(device)
                 ])
 
-            track_queries_match_mask = torch.ones_like(target_ind_matching).float()
+            track_queries_match_mask = torch.ones_like(target_ind_matching).bool()
+            track_queries_fal_pos_mask = torch.zeros_like(target_ind_matching).bool()
+            track_queries_fal_pos_mask[~target_ind_matching] = True
 
             # matches indices with 1.0 and not matched -1.0
-            track_queries_match_mask[~target_ind_matching] = -1.0
+            # track_queries_match_mask[~target_ind_matching] = -1.0
 
             # set prev frame info
             target['track_query_hs_embeds'] = prev_out['hs_embed'][i, prev_out_ind]
@@ -115,8 +117,13 @@ class DETRTrackingBase(nn.Module):
 
             target['track_queries_match_mask'] = torch.cat([
                 track_queries_match_mask,
-                torch.tensor([0.0, ] * self.num_queries).to(device)
-            ])
+                torch.tensor([False, ] * self.num_queries).to(device)
+            ]).bool()
+
+            target['track_queries_fal_pos_mask'] = torch.cat([
+                track_queries_fal_pos_mask,
+                torch.tensor([False, ] * self.num_queries).to(device)
+            ]).bool()
 
         # add placeholder track queries to allow for batch sizes > 1
         max_track_query_hs_embeds = max([len(t['track_query_hs_embeds']) for t in targets])
@@ -138,9 +145,14 @@ class DETRTrackingBase(nn.Module):
             ])
 
             target['track_queries_match_mask'] = torch.cat([
-                torch.tensor([-2.0, ] * num_add).to(device),
+                torch.tensor([True, ] * num_add).to(device),
                 target['track_queries_match_mask']
-            ])
+            ]).bool()
+
+            target['track_queries_fal_pos_mask'] = torch.cat([
+                torch.tensor([False, ] * num_add).to(device),
+                target['track_queries_fal_pos_mask']
+            ]).bool()
 
             target['track_queries_placeholder_mask'] = torch.zeros_like(target['track_queries_match_mask']).bool()
             target['track_queries_placeholder_mask'][:num_add] = True

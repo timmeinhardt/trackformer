@@ -178,8 +178,6 @@ class SetCriterion(nn.Module):
                                     dtype=torch.int64, device=src_logits.device)
         target_classes[idx] = target_classes_o
 
-        # target_classes[torch.stack([t["track_queries_match_mask"] == -1.0 for t in targets])] = 1
-
         loss_ce = F.cross_entropy(src_logits.transpose(1, 2),
                                   target_classes,
                                   weight=self.empty_weight,
@@ -189,10 +187,10 @@ class SetCriterion(nn.Module):
             for i, target in enumerate(targets):
                 if 'track_query_boxes' in target:
                     # remove no-object weighting for false track_queries
-                    loss_ce[i, targets[i]['track_queries_match_mask'] == -1] *= 1 / self.eos_coef
+                    loss_ce[i, target['track_queries_fal_pos_mask']] *= 1 / self.eos_coef
                     # assign false track_queries to some object class for the final weighting
                     target_classes = target_classes.clone()
-                    target_classes[i, targets[i]['track_queries_match_mask'] == -1] = 0
+                    target_classes[i, target['track_queries_fal_pos_mask']] = 0
 
         weight = None
         if self.tracking:

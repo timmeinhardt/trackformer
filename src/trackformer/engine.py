@@ -31,6 +31,7 @@ def make_results(outputs, targets, postprocessors, tracking, return_only_orig=Tr
         results_mask = [~t['track_queries_placeholder_mask'] for t in targets]
         for target, res_mask in zip(targets, results_mask):
             target['track_queries_match_mask'] = target['track_queries_match_mask'][res_mask]
+            target['track_queries_fal_pos_mask'] = target['track_queries_fal_pos_mask'][res_mask]
 
     results = None
     if not return_only_orig:
