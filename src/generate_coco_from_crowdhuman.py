@@ -11,13 +11,10 @@ DATA_ROOT = 'data/CrowdHuman'
 VIS_THRESHOLD = 0.0
 
 
-def generate_coco_from_crowdhuman():
+def generate_coco_from_crowdhuman(split_name='train_val', split='train_val'):
     """
     Generate COCO data from CrowdHuman.
     """
-    split_name = 'train_val'
-    split = 'train_val'
-
     annotations = {}
     annotations['type'] = 'instances'
     annotations['images'] = []
@@ -39,6 +36,8 @@ def generate_coco_from_crowdhuman():
         for img_dict in annotations['images']}
 
     for split in ['train', 'val']:
+        if split not in split_name:
+            continue
         odgt_annos_file = os.path.join(DATA_ROOT, f'annotations/annotation_{split}.odgt')
         with open(odgt_annos_file, 'r+') as anno_file:
             datalist = anno_file.readlines()
@@ -91,25 +90,25 @@ def generate_coco_from_crowdhuman():
     print(f'ignore augs: {ignores}/{len(annotations["annotations"])}')
     print(len(annotations['images']))
 
-    for img_id, num_objs in num_objs_per_image.items():
-        if num_objs > 50 or num_objs < 2:
-            annotations['images'] = [
-                img for img in annotations['images']
-                if img_id != img['id']]
+    # for img_id, num_objs in num_objs_per_image.items():
+    #     if num_objs > 50 or num_objs < 2:
+    #         annotations['images'] = [
+    #             img for img in annotations['images']
+    #             if img_id != img['id']]
 
-            annotations['annotations'] = [
-                anno for anno in annotations['annotations']
-                if img_id != anno['image_id']]
+    #         annotations['annotations'] = [
+    #             anno for anno in annotations['annotations']
+    #             if img_id != anno['image_id']]
 
-    print(len(annotations['images']))
+    # print(len(annotations['images']))
 
     with open(annotation_file, 'w') as anno_file:
         json.dump(annotations, anno_file, indent=4)
 
 
 if __name__ == '__main__':
-    # generate_coco_from_crowdhuman()
+    generate_coco_from_crowdhuman(split_name='train_val', split='train_val')
 
-    coco_dir = os.path.join('data/CrowdHuman', 'train_val')
-    annotation_file = os.path.join('data/CrowdHuman/annotations', 'train_val.json')
-    check_coco_from_mot(coco_dir, annotation_file, img_id=9012)
+    # coco_dir = os.path.join('data/CrowdHuman', 'train_val')
+    # annotation_file = os.path.join('data/CrowdHuman/annotations', 'train_val.json')
+    # check_coco_from_mot(coco_dir, annotation_file, img_id=9012)
