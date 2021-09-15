@@ -42,8 +42,11 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         # and then apply the random jitter. this ensures that (simulated) adjacent
         # frames have independent jitter.
         if random_state is not None:
-            curr_random_state = random.getstate()
-            random.setstate(random_state)
+            curr_random_state = {
+                'random': random.getstate(),
+                'torch': torch.random.get_rng_state()}
+            random.setstate(random_state['random'])
+            torch.random.set_rng_state(random_state['torch'])
 
         img, target = super(CocoDetection, self).__getitem__(image_id)
         image_id = self.ids[image_id]
@@ -65,7 +68,8 @@ class CocoDetection(torchvision.datasets.CocoDetection):
                 target[field] = target[field][~ignore]
 
         if random_state is not None:
-            random.setstate(curr_random_state)
+            random.setstate(curr_random_state['random'])
+            torch.random.set_rng_state(curr_random_state['torch'])
 
         if random_jitter:
             img, target = self._add_random_jitter(img, target)
@@ -131,7 +135,9 @@ class CocoDetection(torchvision.datasets.CocoDetection):
     #     return img, target
 
     def __getitem__(self, idx):
-        random_state = random.getstate()
+        random_state = {
+            'random': random.getstate(),
+            'torch': torch.random.get_rng_state()}
         img, target = self._getitem_from_id(idx, random_state)
 
         if self._prev_frame:

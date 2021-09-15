@@ -41,7 +41,9 @@ class MOT(CocoDetection):
         return 1.0 / self.seq_length(idx)
 
     def __getitem__(self, idx):
-        random_state = random.getstate()
+        random_state = {
+            'random': random.getstate(),
+            'torch': torch.random.get_rng_state()}
 
         img, target = self._getitem_from_id(idx, random_state)
 
