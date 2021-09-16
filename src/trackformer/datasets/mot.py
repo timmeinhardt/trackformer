@@ -18,7 +18,7 @@ from .crowdhuman import build_crowdhuman
 
 class MOT(CocoDetection):
 
-    def __init__(self, *args, prev_frame_range=None, **kwargs):
+    def __init__(self, *args, prev_frame_range=1, **kwargs):
         super(MOT, self).__init__(*args, **kwargs)
 
         self._prev_frame_range = prev_frame_range
@@ -62,7 +62,7 @@ class MOT(CocoDetection):
             target[f'prev_target'] = prev_target
 
             if self._prev_prev_frame:
-                # PREV PREV
+                # PREV PREV frame equidistant as prev_frame
                 prev_prev_frame_id = min(max(0, prev_frame_id + prev_frame_id - frame_id), self.seq_length(idx) - 1)
                 prev_prev_image_id = self.coco.imgs[idx]['first_frame_image_id'] + prev_prev_frame_id
 
@@ -128,8 +128,12 @@ class WeightedConcatDataset(torch.utils.data.ConcatDataset):
 def build_mot(image_set, args):
     if image_set == 'train':
         root = Path(args.mot_path_train)
+        prev_frame_rnd_augs = args.track_prev_frame_rnd_augs
+        prev_frame_range=args.track_prev_frame_range
     elif image_set == 'val':
         root = Path(args.mot_path_val)
+        prev_frame_rnd_augs = 0.0
+        prev_frame_range = 1
     else:
         ValueError(f'unknown {image_set}')
 
@@ -143,15 +147,14 @@ def build_mot(image_set, args):
     transforms, norm_transforms = make_coco_transforms(
         image_set, args.img_transform, args.overflow_boxes)
 
-
     dataset = MOT(
         img_folder, ann_file, transforms, norm_transforms,
-        prev_frame_range=args.track_prev_frame_range,
+        prev_frame_range=prev_frame_range,
         return_masks=args.masks,
         overflow_boxes=args.overflow_boxes,
         remove_no_obj_imgs=False,
         prev_frame=args.tracking,
-        prev_frame_rnd_augs=args.track_prev_frame_rnd_augs,
+        prev_frame_rnd_augs=prev_frame_rnd_augs,
         prev_prev_frame=args.track_prev_prev_frame,
         )
 
