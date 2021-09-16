@@ -156,6 +156,10 @@ def train(args: Namespace) -> None:
         checkpoint_state_dict = {
             k.replace('detr.', ''): v for k, v in checkpoint['model'].items()}
 
+        # for k, v in checkpoint_state_dict.items():
+        #     if k not in model_state_dict:
+        #         print(f'Where is {k} {tuple(v.shape)}?')
+
         resume_state_dict = {}
         for k, v in model_state_dict.items():
             if k not in checkpoint_state_dict:
@@ -173,26 +177,30 @@ def train(args: Namespace) -> None:
                     resume_value = v
                     resume_value[:2] = checkpoint_value.clone()
                 elif 'linear1' in k or 'query_embed' in k:
-                    if checkpoint_value.shape[1] * 2 == v.shape[1]:
-                        # from hidden size 256 to 512
-                        resume_value = checkpoint_value.repeat(1, 2)
-                    elif checkpoint_value.shape[0] * 5 == v.shape[0]:
-                        # from 100 to 500 object queries
-                        resume_value = checkpoint_value.repeat(5, 1)
-                    elif checkpoint_value.shape[0] > v.shape[0]:
-                        resume_value = checkpoint_value[:v.shape[0]]
-                    elif checkpoint_value.shape[0] < v.shape[0]:
-                        resume_value = v
-                    else:
-                        raise NotImplementedError
+                    resume_state_dict[k] = v
+                    print(f'Load {k} {tuple(v.shape)} from scratch.')
+                    continue
+                #     if checkpoint_value.shape[1] * 2 == v.shape[1]:
+                #         # from hidden size 256 to 512
+                #         resume_value = checkpoint_value.repeat(1, 2)
+                #     elif checkpoint_value.shape[0] * 5 == v.shape[0]:
+                #         # from 100 to 500 object queries
+                #         resume_value = checkpoint_value.repeat(5, 1)
+                #     elif checkpoint_value.shape[0] > v.shape[0]:
+                #         resume_value = checkpoint_value[:v.shape[0]]
+                #     elif checkpoint_value.shape[0] < v.shape[0]:
+                #         resume_value = v
+                #     else:
+                #         raise NotImplementedError
                 elif 'linear2' in k or 'input_proj' in k:
                     resume_value = checkpoint_value.repeat((2,) + (num_dims - 1) * (1, ))
                 elif 'class_embed' in k:
                     # person and no-object class
                     # resume_value = checkpoint_value[[1, -1]]
                     # resume_value = checkpoint_value[[0, -1]]
-                    # resume_value = checkpoint_value[[1,]]
-                    resume_value = v
+                    resume_value = checkpoint_value[[1,]]
+                    # resume_value = v
+                    # print(f'Load {k} {tuple(v.shape)} from scratch.')
                 else:
                     raise NotImplementedError(f"No rule for {k} with shape {v.shape}.")
 
