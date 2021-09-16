@@ -18,5 +18,7 @@ not_tracked_dir/
 .python-version
 *.sbatch
 *.egg-info
-build
-dist
+src/trackformer/models/ops/build*
+src/trackformer/models/ops/dist*
+src/trackformer/models/ops/lib*
+src/trackformer/models/ops/temp*

@@ -1,10 +1,4 @@
-# ------------------------------------------------------------------------------------------------
-# Deformable DETR
-# Copyright (c) 2020 SenseTime. All Rights Reserved.
-# Licensed under the Apache License, Version 2.0 [see LICENSE for details]
-# ------------------------------------------------------------------------------------------------
-# Modified from https://github.com/chengdazhi/Deformable-Convolution-V2-PyTorch/tree/pytorch_1.0.0
-# ------------------------------------------------------------------------------------------------
+#!/usr/bin/env python
 
 import os
 import glob
@@ -63,9 +57,10 @@ setup(
     name="MultiScaleDeformableAttention",
     version="1.0",
     author="Weijie Su",
-    url="https://github.com/fundamentalvision/Deformable-DETR",
-    description="PyTorch Wrapper for CUDA Functions of Multi-Scale Deformable Attention",
+    url="xxx",
+    description="Multi-Scale Deformable Attention Module in Deformable DETR",
     packages=find_packages(exclude=("configs", "tests",)),
+    # install_requires=requirements,
     ext_modules=get_extensions(),
     cmdclass={"build_ext": torch.utils.cpp_extension.BuildExtension},
 )

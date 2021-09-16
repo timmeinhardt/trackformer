@@ -13,21 +13,20 @@ from functions.ms_deform_attn_func import MSDeformAttnFunction, ms_deform_attn_c
 
 N, M, D = 2, 2, 4
 Lq, L, P = 3, 3, 2
-shapes = torch.as_tensor([(8, 8), (4, 4), (2, 2)], dtype=torch.long).cuda()
+shapes = torch.as_tensor([(12, 8), (6, 4), (3, 2)], dtype=torch.long).cuda()
 S = sum([(H*W).item() for H, W in shapes])
-
 
 torch.manual_seed(3)
 
-
+@torch.no_grad()
 def check_forward_equal_with_pytorch():
     value = torch.rand(N, S, M, D).cuda() * 0.01
     sampling_locations = torch.rand(N, Lq, M, L, P, 2).cuda()
     attention_weights = torch.rand(N, Lq, M, L, P).cuda() + 1e-5
     attention_weights /= attention_weights.sum(-1, keepdim=True).sum(-2, keepdim=True)
     im2col_step = 2
-    output_pytorch = ms_deform_attn_core_pytorch(value, shapes, sampling_locations, attention_weights)
-    output_cuda = MSDeformAttnFunction.apply(value, shapes, sampling_locations, attention_weights, im2col_step)
+    output_pytorch = ms_deform_attn_core_pytorch(value.double(), shapes, sampling_locations.double(), attention_weights.double()).detach().cpu()
+    output_cuda = MSDeformAttnFunction.apply(value.double(), shapes, sampling_locations.double(), attention_weights.double(), im2col_step).detach().cpu()
     fwdok = torch.allclose(output_cuda, output_pytorch, rtol=1e-2, atol=1e-3)
     max_abs_err = (output_cuda - output_pytorch).abs().max()
     max_rel_err = ((output_cuda - output_pytorch).abs() / output_pytorch.abs()).max()
@@ -44,13 +43,13 @@ def check_backward_equal_with_pytorch():
     value.requires_grad = True
     sampling_locations.requires_grad = True
     attention_weights.requires_grad = True
-    output_pytorch = ms_deform_attn_core_pytorch(value, shapes, sampling_locations, attention_weights)
-    output_cuda = MSDeformAttnFunction.apply(value, shapes, sampling_locations, attention_weights, im2col_step)
+    output_pytorch = ms_deform_attn_core_pytorch(value.double(), shapes, sampling_locations.double(), attention_weights.double())
+    output_cuda = MSDeformAttnFunction.apply(value.double(), shapes, sampling_locations.double(), attention_weights.double(), im2col_step)
     loss_pytorch = output_pytorch.abs().sum()
     loss_cuda = output_cuda.abs().sum()
 
-    grad_value_pytorch = torch.autograd.grad(loss_pytorch, value, retain_graph=True)[0]
-    grad_value_cuda = torch.autograd.grad(loss_cuda, value, retain_graph=True)[0]
+    grad_value_pytorch = torch.autograd.grad(loss_pytorch, value, retain_graph=True)[0].detach().cpu()
+    grad_value_cuda = torch.autograd.grad(loss_cuda, value, retain_graph=True)[0].detach().cpu()
     bwdok = torch.allclose(grad_value_cuda, grad_value_pytorch, rtol=1e-2, atol=1e-3)
     max_abs_err = (grad_value_cuda - grad_value_pytorch).abs().max()
     zero_grad_mask = grad_value_pytorch == 0
@@ -64,8 +63,8 @@ def check_backward_equal_with_pytorch():
           f'max_rel_err {max_rel_err:.2e} '
           f'max_abs_err_0 {max_abs_err_0:.2e}')
 
-    grad_sampling_loc_pytorch = torch.autograd.grad(loss_pytorch, sampling_locations, retain_graph=True)[0]
-    grad_sampling_loc_cuda = torch.autograd.grad(loss_cuda, sampling_locations, retain_graph=True)[0]
+    grad_sampling_loc_pytorch = torch.autograd.grad(loss_pytorch, sampling_locations, retain_graph=True)[0].detach().cpu()
+    grad_sampling_loc_cuda = torch.autograd.grad(loss_cuda, sampling_locations, retain_graph=True)[0].detach().cpu()
     bwdok = torch.allclose(grad_sampling_loc_cuda, grad_sampling_loc_pytorch, rtol=1e-2, atol=1e-3)
     max_abs_err = (grad_sampling_loc_cuda - grad_sampling_loc_pytorch).abs().max()
     zero_grad_mask = grad_sampling_loc_pytorch == 0
@@ -79,8 +78,8 @@ def check_backward_equal_with_pytorch():
           f'max_rel_err {max_rel_err:.2e} '
           f'max_abs_err_0 {max_abs_err_0:.2e}')
 
-    grad_attn_weight_pytorch = torch.autograd.grad(loss_pytorch, attention_weights, retain_graph=True)[0]
-    grad_attn_weight_cuda = torch.autograd.grad(loss_cuda, attention_weights, retain_graph=True)[0]
+    grad_attn_weight_pytorch = torch.autograd.grad(loss_pytorch, attention_weights, retain_graph=True)[0].detach().cpu()
+    grad_attn_weight_cuda = torch.autograd.grad(loss_cuda, attention_weights, retain_graph=True)[0].detach().cpu()
     bwdok = torch.allclose(grad_attn_weight_cuda, grad_attn_weight_pytorch, rtol=1e-2, atol=1e-3)
     max_abs_err = (grad_attn_weight_cuda - grad_attn_weight_pytorch).abs().max()
     zero_grad_mask = grad_attn_weight_pytorch == 0
@@ -115,11 +114,9 @@ def check_gradient_ms_deform_attn(
 
     eps = 1e-3 if not grad_sampling_loc else 2e-4
     if use_pytorch:
-        gradok = gradcheck(func, (value, shapes, sampling_locations, attention_weights),
-                           eps=eps, atol=1e-3, rtol=1e-2, raise_exception=True)
+        gradok = gradcheck(func, (value.double(), shapes, sampling_locations.double(), attention_weights.double()))
     else:
-        gradok = gradcheck(func, (value, shapes, sampling_locations, attention_weights, im2col_step),
-                           eps=eps, atol=1e-3, rtol=1e-2, raise_exception=True)
+        gradok = gradcheck(func, (value.double(), shapes, sampling_locations.double(), attention_weights.double(), im2col_step))
 
     print(f'* {gradok} '
           f'check_gradient_ms_deform_attn('
