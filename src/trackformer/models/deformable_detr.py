@@ -109,6 +109,8 @@ class DeformableDETR(DETR):
             for box_embed in self.bbox_embed:
                 nn.init.constant_(box_embed.layers[-1].bias.data[2:], 0.0)
 
+        # self.combine = nn.Conv2d(self.hidden_dim * 2, self.hidden_dim, kernel_size=1)
+
     # @property
     # def fpn_channels(self):
     #     """ Returns FPN channels. """
@@ -152,8 +154,8 @@ class DeformableDETR(DETR):
 
             prev_src, _ = prev_feat.decompose()
 
-            if hasattr(self, 'merge_features'):
-                srcs.append(self.merge_features(torch.cat([self.input_proj[l](src), self.input_proj[l](prev_src)], dim=1)))
+            if hasattr(self, 'combine'):
+                srcs.append(self.combine(torch.cat([self.input_proj[l](src), self.input_proj[l](prev_src)], dim=1)))
             else:
                 srcs.append(self.input_proj[l](src))
 
@@ -164,8 +166,8 @@ class DeformableDETR(DETR):
             _len_srcs = len(srcs)
             for l in range(_len_srcs, self.num_feature_levels):
                 if l == _len_srcs:
-                    if hasattr(self, 'merge_features'):
-                        src = self.merge_features(torch.cat([self.input_proj[l](features[-1].tensors), self.input_proj[l](prev_features[-1].tensors)], dim=1))
+                    if hasattr(self, 'combine'):
+                        src = self.combine(torch.cat([self.input_proj[l](features[-1].tensors), self.input_proj[l](prev_features[-1].tensors)], dim=1))
                     else:
                         src = self.input_proj[l](features[-1].tensors)
                 else:
