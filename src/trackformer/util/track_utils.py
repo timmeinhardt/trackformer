@@ -140,7 +140,10 @@ def plot_sequence(tracks, data_loader, output_dir, write_images, generate_attent
     # styles = defaultdict(lambda: next(loop_cy_iter))
 
     # cmap = plt.cm.get_cmap('hsv', )
-    cmap = rand_cmap(len(tracks), type='bright', first_color_black=False, last_color_black=False)
+    mx = 0
+    for track_id, track_data in tracks.items():
+        mx = max(mx, track_id)
+    cmap = rand_cmap(mx, type='bright', first_color_black=False, last_color_black=False)
 
     # if generate_attention_maps:
     #     attention_maps_per_track = {
