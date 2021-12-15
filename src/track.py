@@ -100,7 +100,7 @@ def main(seed, dataset_name, obj_detect_checkpoint_file, tracker_cfg,
         track_logger = _log.info
     tracker = Tracker(
         obj_detector, obj_detector_post, tracker_cfg,
-        generate_attention_maps, track_logger)
+        generate_attention_maps, track_logger, verbose)
 
     time_total = 0
     num_frames = 0

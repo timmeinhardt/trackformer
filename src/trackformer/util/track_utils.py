@@ -195,7 +195,7 @@ def plot_sequence(tracks, data_loader, output_dir, write_images, generate_attent
 
                 if write_images == 'debug':
                     ax.annotate(
-                        f"{track_id} ({track_data[frame_id]['score']:.2f})",
+                        f"{track_id} - {track_data[frame_id]['obj_ind']} ({track_data[frame_id]['score']:.2f})",
                         (bbox[0] + (bbox[2] - bbox[0]) / 2.0, bbox[1] + (bbox[3] - bbox[1]) / 2.0),
                         color=annotate_color, weight='bold', fontsize=12, ha='center', va='center')
 

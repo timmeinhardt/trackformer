@@ -45,7 +45,7 @@ class MOT(CocoDetection):
             'random': random.getstate(),
             'torch': torch.random.get_rng_state()}
 
-        img, target = self._getitem_from_id(idx, random_state)
+        img, target = self._getitem_from_id(idx, random_state, random_jitter=False)
 
         if self._prev_frame:
             frame_id = self.coco.imgs[idx]['frame_id']

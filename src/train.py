@@ -73,12 +73,12 @@ def train(args: Namespace) -> None:
 
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
-    # torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.deterministic = True
 
     model, criterion, postprocessors = build_model(args)
     model.to(device)
 
-    visualizers = build_visualizers(args)
+    visualizers = build_visualizers(args, list(criterion.weight_dict.keys()))
 
     model_without_ddp = model
     if args.distributed:
@@ -156,9 +156,9 @@ def train(args: Namespace) -> None:
         checkpoint_state_dict = {
             k.replace('detr.', ''): v for k, v in checkpoint['model'].items()}
 
-        # for k, v in checkpoint_state_dict.items():
-        #     if k not in model_state_dict:
-        #         print(f'Where is {k} {tuple(v.shape)}?')
+        for k, v in checkpoint_state_dict.items():
+            if k not in model_state_dict:
+                print(f'Where is {k} {tuple(v.shape)}?')
 
         resume_state_dict = {}
         for k, v in model_state_dict.items():
@@ -243,9 +243,14 @@ def train(args: Namespace) -> None:
 
                 optimizer.load_state_dict(checkpoint['optimizer'])
             if 'lr_scheduler' in checkpoint:
+                if args.overwrite_lr_scheduler:
+                    checkpoint['lr_scheduler'].pop('milestones')
                 lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
+                if args.overwrite_lr_scheduler:
+                    lr_scheduler.step(checkpoint['lr_scheduler']['last_epoch'])
             if 'epoch' in checkpoint:
                 args.start_epoch = checkpoint['epoch'] + 1
+                print(f"RESUME EPOCH: {args.start_epoch}")
 
             best_val_stats = checkpoint['best_val_stats']
 

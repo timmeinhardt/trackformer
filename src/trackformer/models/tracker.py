@@ -17,7 +17,7 @@ class Tracker:
     """The main tracking file, here is where magic happens."""
 
     def __init__(self, obj_detector, obj_detector_post, tracker_cfg,
-                 generate_attention_maps, logger=None):
+                 generate_attention_maps, logger=None, verbose=False):
         self.obj_detector = obj_detector
         self.obj_detector_post = obj_detector_post
         self.detection_obj_score_thresh = tracker_cfg['detection_obj_score_thresh']
@@ -62,6 +62,7 @@ class Tracker:
         self._logger = logger
         if self._logger is None:
             self._logger = lambda *log_strs: None
+        self._verbose = verbose
 
     @property
     def num_object_queries(self):
@@ -89,7 +90,7 @@ class Tracker:
             track.pos = track.last_pos[-1]
         self.inactive_tracks += tracks
 
-    def add_tracks(self, pos, scores, hs_embeds, masks=None, attention_maps=None):
+    def add_tracks(self, pos, scores, hs_embeds, indices, masks=None, attention_maps=None, aux_results=None):
         """Initializes new Track objects and saves them."""
         new_track_ids = []
         for i in range(len(pos)):
@@ -98,6 +99,7 @@ class Tracker:
                 scores[i],
                 self.track_num + i,
                 hs_embeds[i],
+                indices[i],
                 None if masks is None else masks[i],
                 None if attention_maps is None else attention_maps[i],
             ))
@@ -108,6 +110,14 @@ class Tracker:
             self._logger(
                 f'INIT TRACK IDS (detection_obj_score_thresh={self.detection_obj_score_thresh}): '
                 f'{new_track_ids}')
+
+            if aux_results is not None:
+                aux_scores = torch.cat([
+                    a['scores'][-self.num_object_queries:][indices]
+                    for a in aux_results] + [scores[..., None], ], dim=-1)
+
+                for new_track_id, aux_score in zip(new_track_ids, aux_scores):
+                    self._logger(f"AUX SCORES ID {new_track_id}: {[f'{s:.2f}' for s in aux_score]}")
 
         return new_track_ids
 
@@ -257,6 +267,11 @@ class Tracker:
         """This function should be called every timestep to perform tracking with a blob
         containing the image information.
         """
+        self.inactive_tracks = [
+            t for t in self.inactive_tracks
+            if t.has_positive_area() and t.count_inactive <= self.inactive_patience
+        ]
+
         self._logger(f'FRAME: {self.frame_index + 1}')
         if self.inactive_tracks:
             self._logger(f'INACTIVE TRACK IDS: {[t.id for t in self.inactive_tracks]}')
@@ -305,8 +320,10 @@ class Tracker:
         if 'masks' in result:
             result['masks'] = result['masks'].squeeze(dim=1)
 
-        # boxes = clip_boxes_to_image(result['boxes'], orig_size[0])
-        boxes = result['boxes']
+        if self.obj_detector.overflow_boxes:
+            boxes = result['boxes']
+        else:
+            boxes = clip_boxes_to_image(result['boxes'], orig_size[0])
 
         # TRACKS
         if num_prev_track:
@@ -411,6 +428,7 @@ class Tracker:
         new_det_boxes = new_det_boxes[new_det_keep]
         new_det_scores = new_det_scores[new_det_keep]
         new_det_hs_embeds = new_det_hs_embeds[new_det_keep]
+        new_det_indices = new_det_keep.float().nonzero()
 
         if 'masks' in result:
             new_det_masks = new_det_masks[new_det_keep]
@@ -424,6 +442,7 @@ class Tracker:
         new_det_boxes = new_det_boxes[public_detections_mask]
         new_det_scores = new_det_scores[public_detections_mask]
         new_det_hs_embeds = new_det_hs_embeds[public_detections_mask]
+        new_det_indices = new_det_indices[public_detections_mask]
         if 'masks' in result:
             new_det_masks = new_det_masks[public_detections_mask]
         if self.generate_attention_maps:
@@ -440,18 +459,27 @@ class Tracker:
         new_det_boxes = new_det_boxes[reid_mask]
         new_det_scores = new_det_scores[reid_mask]
         new_det_hs_embeds = new_det_hs_embeds[reid_mask]
+        new_det_indices = new_det_indices[reid_mask]
         if 'masks' in result:
             new_det_masks = new_det_masks[reid_mask]
         if self.generate_attention_maps:
             new_det_attention_maps = new_det_attention_maps[reid_mask]
 
         # final add track
+        aux_results = None
+        if self._verbose:
+            aux_results = [
+                self.obj_detector_post['bbox'](out, orig_size)[0]
+                for out in outputs['aux_outputs']]
+
         new_track_ids = self.add_tracks(
             new_det_boxes,
             new_det_scores,
             new_det_hs_embeds,
+            new_det_indices,
             new_det_masks if 'masks' in result else None,
-            new_det_attention_maps if self.generate_attention_maps else None)
+            new_det_attention_maps if self.generate_attention_maps else None,
+            aux_results)
 
         # NMS
         if self.detection_nms_thresh and self.tracks:
@@ -497,9 +525,14 @@ class Tracker:
                 self.results[track.id] = {}
 
             self.results[track.id][self.frame_index] = {}
-            self.results[track.id][self.frame_index]['bbox'] = clip_boxes_to_image(track.pos, orig_size[0]).cpu().numpy()
-            # self.results[track.id][self.frame_index]['bbox'] = track.pos.cpu().numpy()
+
+            if self.obj_detector.overflow_boxes:
+                self.results[track.id][self.frame_index]['bbox'] = track.pos.cpu().numpy()
+            else:
+                self.results[track.id][self.frame_index]['bbox'] = clip_boxes_to_image(track.pos, orig_size[0]).cpu().numpy()
+
             self.results[track.id][self.frame_index]['score'] = track.score.cpu().numpy()
+            self.results[track.id][self.frame_index]['obj_ind'] = track.obj_ind.cpu().item()
 
             if track.mask is not None:
                 self.results[track.id][self.frame_index]['mask'] = track.mask.cpu().numpy()
@@ -524,7 +557,7 @@ class Tracker:
 class Track(object):
     """This class contains all necessary for every individual track."""
 
-    def __init__(self, pos, score, track_id, hs_embed,
+    def __init__(self, pos, score, track_id, hs_embed, obj_ind,
                  mask=None, attention_map=None):
         self.id = track_id
         self.pos = pos
@@ -537,6 +570,7 @@ class Track(object):
         self.hs_embed = [hs_embed]
         self.mask = mask
         self.attention_map = attention_map
+        self.obj_ind = obj_ind
 
     def has_positive_area(self) -> bool:
         """Checks if the current position of the track has

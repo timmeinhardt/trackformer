@@ -97,19 +97,20 @@ def main(args: Namespace):
         slurm_gres = args.slurm_gres
     else:
         slurm_gres = f'gpu:{num_gpus_per_node},VRAM:{args.vram}'
+        # slurm_gres = f'gpu:rtx_8000:{num_gpus_per_node}'
 
     executor.update_parameters(
         mem_gb=args.mem_per_gpu * num_gpus_per_node,
-        # gpus_per_node=num_gpus_per_node,
+        gpus_per_node=num_gpus_per_node,
         tasks_per_node=num_gpus_per_node,  # one task per GPU
-        cpus_per_task=2,
+        cpus_per_task=args.cpus_per_task,
         nodes=nodes,
         timeout_min=timeout_min,  # max is 60 * 72,
         slurm_partition=args.slurm_partition,
         slurm_constraint=args.slurm_constraint,
         slurm_comment=args.slurm_comment,
         slurm_exclude=args.slurm_exclude,
-        slurm_gres=slurm_gres
+        # slurm_gres=slurm_gres
     )
 
     executor.update_parameters(name="fair_track")

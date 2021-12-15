@@ -4,6 +4,7 @@ Generates COCO data and annotation structure from CrowdHuman data.
 """
 import json
 import os
+import cv2
 
 from generate_coco_from_mot import check_coco_from_mot
 
@@ -18,8 +19,8 @@ def generate_coco_from_crowdhuman(split_name='train_val', split='train_val'):
     annotations = {}
     annotations['type'] = 'instances'
     annotations['images'] = []
-    annotations['categories'] = [{"supercategory": "pedestrian",
-                                  "name": "pedestrian",
+    annotations['categories'] = [{"supercategory": "person",
+                                  "name": "person",
                                   "id": 1}]
     annotations['annotations'] = []
     annotation_file = os.path.join(DATA_ROOT, f'annotations/{split_name}.json')
@@ -27,7 +28,14 @@ def generate_coco_from_crowdhuman(split_name='train_val', split='train_val'):
     # IMAGES
     imgs_list_dir = os.listdir(os.path.join(DATA_ROOT, split))
     for i, img in enumerate(sorted(imgs_list_dir)):
-        annotations['images'].append({"file_name": img, "id": i, })
+        im = cv2.imread(os.path.join(DATA_ROOT, split, img))
+        h, w, _ = im.shape
+
+        annotations['images'].append({
+            "file_name": img,
+            "height": h,
+            "width": w,
+            "id": i, })
 
     # GT
     annotation_id = 0
@@ -107,7 +115,8 @@ def generate_coco_from_crowdhuman(split_name='train_val', split='train_val'):
 
 
 if __name__ == '__main__':
-    generate_coco_from_crowdhuman(split_name='train_val', split='train_val')
+    # generate_coco_from_crowdhuman(split_name='train_val', split='train_val')
+    generate_coco_from_crowdhuman(split_name='train', split='train')
 
     # coco_dir = os.path.join('data/CrowdHuman', 'train_val')
     # annotation_file = os.path.join('data/CrowdHuman/annotations', 'train_val.json')

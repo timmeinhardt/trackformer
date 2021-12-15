@@ -138,7 +138,7 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         random_state = {
             'random': random.getstate(),
             'torch': torch.random.get_rng_state()}
-        img, target = self._getitem_from_id(idx, random_state)
+        img, target = self._getitem_from_id(idx, random_state, random_jitter=False)
 
         if self._prev_frame:
             # PREV

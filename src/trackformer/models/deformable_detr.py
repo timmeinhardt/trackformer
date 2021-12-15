@@ -31,7 +31,7 @@ def _get_clones(module, N):
 class DeformableDETR(DETR):
     """ This is the Deformable DETR module that performs object detection """
     def __init__(self, backbone, transformer, num_classes, num_queries, num_feature_levels,
-                 aux_loss=True, with_box_refine=False, two_stage=False):
+                 aux_loss=True, with_box_refine=False, two_stage=False, overflow_boxes=False):
         """ Initializes the model.
         Parameters:
             backbone: torch module of the backbone to be used. See backbone.py
@@ -46,6 +46,7 @@ class DeformableDETR(DETR):
         """
         super().__init__(backbone, transformer, num_classes, num_queries, aux_loss)
 
+        self.overflow_boxes = overflow_boxes
         self.num_feature_levels = num_feature_levels
         if not two_stage:
             self.query_embed = nn.Embedding(num_queries, self.hidden_dim * 2)
@@ -109,7 +110,7 @@ class DeformableDETR(DETR):
             for box_embed in self.bbox_embed:
                 nn.init.constant_(box_embed.layers[-1].bias.data[2:], 0.0)
 
-        # self.combine = nn.Conv2d(self.hidden_dim * 2, self.hidden_dim, kernel_size=1)
+        self.merge_features = nn.Conv2d(self.hidden_dim * 2, self.hidden_dim, kernel_size=1)
 
     # @property
     # def fpn_channels(self):
@@ -154,8 +155,8 @@ class DeformableDETR(DETR):
 
             prev_src, _ = prev_feat.decompose()
 
-            if hasattr(self, 'combine'):
-                srcs.append(self.combine(torch.cat([self.input_proj[l](src), self.input_proj[l](prev_src)], dim=1)))
+            if hasattr(self, 'merge_features'):
+                srcs.append(self.merge_features(torch.cat([self.input_proj[l](src), self.input_proj[l](prev_src)], dim=1)))
             else:
                 srcs.append(self.input_proj[l](src))
 
@@ -167,7 +168,7 @@ class DeformableDETR(DETR):
             for l in range(_len_srcs, self.num_feature_levels):
                 if l == _len_srcs:
                     if hasattr(self, 'combine'):
-                        src = self.combine(torch.cat([self.input_proj[l](features[-1].tensors), self.input_proj[l](prev_features[-1].tensors)], dim=1))
+                        src = self.merge_features(torch.cat([self.input_proj[l](features[-1].tensors), self.input_proj[l](prev_features[-1].tensors)], dim=1))
                     else:
                         src = self.input_proj[l](features[-1].tensors)
                 else:
@@ -273,6 +274,7 @@ class DeformablePostProcess(PostProcess):
         ###
 
         scores, labels = prob.max(-1)
+        # scores, labels = prob[..., 0:1].max(-1)
         boxes = box_ops.box_cxcywh_to_xyxy(out_bbox)
 
         # and from relative [0, 1] to absolute [0, height] coordinates

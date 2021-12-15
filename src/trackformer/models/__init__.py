@@ -19,7 +19,8 @@ def build_model(args):
     elif args.dataset == 'coco_panoptic':
         num_classes = 250
     elif args.dataset in ['coco_person', 'mot', 'mot_crowdhuman', 'crowdhuman']:
-        num_classes = 1
+        num_classes = 20
+        # num_classes = 1
     else:
         raise NotImplementedError
 
@@ -31,7 +32,8 @@ def build_model(args):
         'backbone': backbone,
         'num_classes': num_classes - 1 if args.focal_loss else num_classes,
         'num_queries': args.num_queries,
-        'aux_loss': args.aux_loss,}
+        'aux_loss': args.aux_loss,
+        'overflow_boxes': args.overflow_boxes}
 
     tracking_kwargs = {
         'track_query_false_positive_prob': args.track_query_false_positive_prob,
@@ -89,7 +91,9 @@ def build_model(args):
         aux_weight_dict = {}
         for i in range(args.dec_layers - 1):
             aux_weight_dict.update({k + f'_{i}': v for k, v in weight_dict.items()})
-        aux_weight_dict.update({k + f'_enc': v for k, v in weight_dict.items()})
+
+        if args.two_stage:
+            aux_weight_dict.update({k + f'_enc': v for k, v in weight_dict.items()})
         weight_dict.update(aux_weight_dict)
 
     losses = ['labels', 'boxes', 'cardinality']

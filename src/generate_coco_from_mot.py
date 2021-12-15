@@ -56,8 +56,8 @@ def generate_coco_from_mot(split_name='train', seqs_names=None,
     annotations = {}
     annotations['type'] = 'instances'
     annotations['images'] = []
-    annotations['categories'] = [{"supercategory": "pedestrian",
-                                  "name": "pedestrian",
+    annotations['categories'] = [{"supercategory": "person",
+                                  "name": "person",
                                   "id": 1}]
     annotations['annotations'] = []
 
@@ -141,7 +141,7 @@ def generate_coco_from_mot(split_name='train', seqs_names=None,
             for frame_id, mask_objects in mask_objects_per_frame.items():
                 for mask_object in mask_objects:
                     # class_id = 1 is car
-                    # class_id = 2 is pedestrian
+                    # class_id = 2 is person
                     # class_id = 10 IGNORE
                     if mask_object.class_id == 1:
                         continue
@@ -192,7 +192,6 @@ def generate_coco_from_mot(split_name='train', seqs_names=None,
                         if image_id is None:
                             continue
                         track_id = int(row[1])
-
 
                         annotation = {
                             "id": annotation_id,
@@ -272,7 +271,7 @@ def check_coco_from_mot(coco_dir='data/MOT17/mot17_train_coco', annotation_file=
     # annotation_file = os.path.join(coco_dir, 'annotations.json')
 
     coco = COCO(annotation_file)
-    cat_ids = coco.getCatIds(catNms=['pedestrian'])
+    cat_ids = coco.getCatIds(catNms=['person'])
     if img_id == None:
         img_ids = coco.getImgIds(catIds=cat_ids)
         index = np.random.randint(0, len(img_ids))

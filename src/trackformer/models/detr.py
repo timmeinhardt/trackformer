@@ -2,6 +2,8 @@
 """
 DETR model and criterion classes.
 """
+import copy
+
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -16,7 +18,7 @@ class DETR(nn.Module):
     """ This is the DETR module that performs object detection. """
 
     def __init__(self, backbone, transformer, num_classes, num_queries,
-                 aux_loss=False):
+                 aux_loss=False, overflow_boxes=False):
         """ Initializes the model.
         Parameters:
             backbone: torch module of the backbone to be used. See backbone.py
@@ -31,6 +33,7 @@ class DETR(nn.Module):
 
         self.num_queries = num_queries
         self.transformer = transformer
+        self.overflow_boxes = overflow_boxes
         self.class_embed = nn.Linear(self.hidden_dim, num_classes + 1)
         self.bbox_embed = MLP(self.hidden_dim, self.hidden_dim, 4, 3)
         self.query_embed = nn.Embedding(num_queries, self.hidden_dim)
@@ -228,6 +231,7 @@ class SetCriterion(nn.Module):
         query_mask = None
         if self.tracking:
             query_mask = torch.stack([~t['track_queries_placeholder_mask'] for t in targets])[..., None]
+            query_mask = query_mask.repeat(1, 1, self.num_classes)
 
         loss_ce = sigmoid_focal_loss(src_logits, target_classes_onehot, num_boxes, alpha=self.focal_alpha, gamma=2, query_mask=query_mask)
 

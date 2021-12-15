@@ -89,6 +89,7 @@ class SmoothedValue(object):
 
 
 def all_gather(data):
+
     """
     Run all_gather on arbitrary picklable data (not necessarily tensors)
     Args:

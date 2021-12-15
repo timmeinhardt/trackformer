@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 
 from ..util import box_ops
-from ..util.misc import NestedTensor
+from ..util.misc import NestedTensor, get_rank
 from .deformable_detr import DeformableDETR
 from .detr import DETR
 from .matcher import HungarianMatcher
@@ -102,10 +102,24 @@ class DETRTrackingBase(nn.Module):
                     torch.tensor([False, ] * len(random_false_out_ind)).bool().to(device)
                 ])
 
+            # MSDeformAttn can not deal with empty inputs therefore we
+            # add single false pos to have at least one track query per sample
+            # not_prev_out_ind = torch.tensor([
+            #     ind
+            #     for ind in torch.arange(prev_out['pred_boxes'].shape[1])
+            #     if ind not in prev_out_ind])
+            # false_samples_inds = torch.randperm(not_prev_out_ind.size(0))[:1]
+            # false_samples = not_prev_out_ind[false_samples_inds]
+            # prev_out_ind = torch.cat([prev_out_ind, false_samples])
+            # target_ind_matching = torch.tensor(
+            #     target_ind_matching.tolist() + [False, ]).bool().to(target_ind_matching.device)
+
+            # track query masks
             track_queries_mask = torch.ones_like(target_ind_matching).bool()
             track_queries_fal_pos_mask = torch.zeros_like(target_ind_matching).bool()
             track_queries_fal_pos_mask[~target_ind_matching] = True
 
+            # track_queries_match_mask = torch.ones_like(target_ind_matching).float()
             # matches indices with 1.0 and not matched -1.0
             # track_queries_mask[~target_ind_matching] = -1.0
 

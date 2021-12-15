@@ -244,7 +244,7 @@ def vis_results(visualizer, img, result, target, tracking):
     visualizer.plot(img)
 
 
-def build_visualizers(args: dict):
+def build_visualizers(args: dict, train_loss_names: list):
     visualizers = {}
     visualizers['train'] = {}
     visualizers['val'] = {}
@@ -264,30 +264,35 @@ def build_visualizers(args: dict):
     # METRICS
     #
 
-    legend = [
+    legend = ['loss']
+    legend.extend(train_loss_names)
+    # for i in range(len(train_loss_names)):
+    #     legend.append(f"{train_loss_names[i]}_unscaled")
+
+    legend.extend([
         'class_error',
-        'loss',
-        'loss_bbox',
-        'loss_ce',
-        'loss_giou',
-        'loss_mask',
-        'loss_dice',
-        'cardinality_error_unscaled',
-        'loss_bbox_unscaled',
-        'loss_ce_unscaled',
-        'loss_giou_unscaled',
-        'loss_mask_unscaled',
-        'loss_dice_unscaled',
+        # 'loss',
+        # 'loss_bbox',
+        # 'loss_ce',
+        # 'loss_giou',
+        # 'loss_mask',
+        # 'loss_dice',
+        # 'cardinality_error_unscaled',
+        # 'loss_bbox_unscaled',
+        # 'loss_ce_unscaled',
+        # 'loss_giou_unscaled',
+        # 'loss_mask_unscaled',
+        # 'loss_dice_unscaled',
         'lr',
         'lr_backbone',
         'iter_time'
-    ]
+    ])
 
-    if not args.masks:
-        legend.remove('loss_mask')
-        legend.remove('loss_mask_unscaled')
-        legend.remove('loss_dice')
-        legend.remove('loss_dice_unscaled')
+    # if not args.masks:
+    #     legend.remove('loss_mask')
+    #     legend.remove('loss_mask_unscaled')
+    #     legend.remove('loss_dice')
+    #     legend.remove('loss_dice_unscaled')
 
     opts = dict(
         title="TRAIN METRICS ITERS",

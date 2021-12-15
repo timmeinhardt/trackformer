@@ -280,7 +280,7 @@ def evaluate(model, criterion, postprocessors, data_loader, device,
             rank = i % utils.get_world_size()
             seqs_per_rank[rank].append(seq)
 
-        # only evaluarte one seq in debug mode
+        # only evaluate one seq in debug mode
         if args.debug:
             seqs_per_rank = {k: v[:1] for k, v in seqs_per_rank.items()}
             seqs = [s for ss in seqs_per_rank.values() for s in ss]

@@ -197,7 +197,7 @@ class DeformableTransformer(nn.Module):
             init_reference_out = reference_points
 
         # decoder
-        query_embed = None
+        # query_embed = None
         hs, inter_references = self.decoder(
             tgt, reference_points, memory, spatial_shapes,
             valid_ratios, query_embed, mask_flatten, query_attn_mask)
@@ -331,7 +331,9 @@ class DeformableTransformerDecoderLayer(nn.Module):
     def forward(self, tgt, query_pos, reference_points, src, src_spatial_shapes, src_padding_mask=None, query_attn_mask=None):
         # self attention
         q = k = self.with_pos_embed(tgt, query_pos)
-        tgt2 = self.self_attn(q.transpose(0, 1), k.transpose(0, 1), tgt.transpose(0, 1), query_attn_mask)[0].transpose(0, 1)
+
+        tgt2 = self.self_attn(q.transpose(0, 1), k.transpose(0, 1), tgt.transpose(0, 1), key_padding_mask=query_attn_mask)[0].transpose(0, 1)
+
         tgt = tgt + self.dropout2(tgt2)
         tgt = self.norm2(tgt)
 

@@ -50,7 +50,7 @@ class MOTS20Sequence(MOT17Sequence):
                 # class_id = 1 is car
                 # class_id = 2 is pedestrian
                 # class_id = 10 IGNORE
-                if mask_object.class_id == 1:
+                if mask_object.class_id in [1, 10]:
                     continue
 
                 bbox = rletools.toBbox(mask_object.mask)
@@ -108,7 +108,7 @@ class MOTS20Sequence(MOT17Sequence):
                 # class_id = 1 is car
                 # class_id = 2 is pedestrian
                 # class_id = 10 IGNORE
-                if mask_object.class_id == 1:
+                if mask_object.class_id in [1, 10]:
                     continue
 
                 bbox = rletools.toBbox(mask_object.mask)

@@ -18,3 +18,4 @@ slurm_constraint: ''
 slurm_comment: ''
 slurm_gres: ''
 slurm_exclude: ''
+cpus_per_task: 2
