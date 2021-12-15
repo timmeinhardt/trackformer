@@ -50,6 +50,9 @@ class DeformableTransformer(nn.Module):
             self.pos_trans_norm = nn.LayerNorm(d_model * 2)
         else:
             self.reference_points = nn.Linear(d_model, 2)
+            # self.hs_embed_to_query_embed = nn.Linear(d_model, d_model)
+            # self.hs_embed_to_tgt = nn.Linear(d_model, d_model)
+            # self.track_query_embed = nn.Embedding(1, d_model)
 
         self._reset_parameters()
 
@@ -186,8 +189,16 @@ class DeformableTransformer(nn.Module):
                 prev_hs_embed = torch.stack([t['track_query_hs_embeds'] for t in targets])
                 prev_boxes = torch.stack([t['track_query_boxes'] for t in targets])
 
-                query_embed = torch.cat([torch.zeros_like(prev_hs_embed), query_embed], dim=1)
-                tgt = torch.cat([prev_hs_embed, tgt], dim=1)
+                prev_query_embed = torch.zeros_like(prev_hs_embed)
+                # prev_query_embed = self.track_query_embed.weight.expand_as(prev_hs_embed)
+                # prev_query_embed = self.hs_embed_to_query_embed(prev_hs_embed)
+                # prev_query_embed = None
+
+                prev_tgt = prev_hs_embed
+                # prev_tgt = self.hs_embed_to_tgt(prev_hs_embed)
+
+                query_embed = torch.cat([prev_query_embed, query_embed], dim=1)
+                tgt = torch.cat([prev_tgt, tgt], dim=1)
 
                 reference_points = torch.cat([prev_boxes[..., :2], reference_points], dim=1)
 

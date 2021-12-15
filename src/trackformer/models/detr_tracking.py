@@ -42,10 +42,22 @@ class DETRTrackingBase(nn.Module):
             prev_out_ind, prev_target_ind = prev_ind
 
             # random subset
-            if self._track_query_false_negative_prob:
-                random_subset_mask = torch.empty(len(prev_target_ind)).uniform_()
-                random_subset_mask = random_subset_mask.ge(
-                    self._track_query_false_negative_prob)
+            if self._track_query_false_negative_prob and len(prev_target_ind):
+                # random_subset_mask = torch.empty(len(prev_target_ind)).uniform_()
+                # random_subset_mask = random_subset_mask.ge(
+                #     self._track_query_false_negative_prob)
+
+                random_subset_mask = torch.randperm(len(prev_target_ind))[:torch.randint(0, len(prev_target_ind), (1,))]
+
+                # if not len(random_subset_mask):
+                #     target['track_query_hs_embeds'] = torch.zeros(0, self.hidden_dim).float().to(device)
+                #     target['track_queries_placeholder_mask'] = torch.zeros(self.num_queries).bool().to(device)
+                #     target['track_queries_mask'] = torch.zeros(self.num_queries).bool().to(device)
+                #     target['track_queries_fal_pos_mask'] = torch.zeros(self.num_queries).bool().to(device)
+                #     target['track_query_boxes'] = torch.zeros(0, 4).to(device)
+                #     target['track_query_match_ids'] = torch.tensor([]).long().to(device)
+
+                #     continue
 
                 prev_out_ind = prev_out_ind[random_subset_mask]
                 prev_target_ind = prev_target_ind[random_subset_mask]
@@ -173,40 +185,54 @@ class DETRTrackingBase(nn.Module):
         if targets is not None and not self._tracking:
             prev_targets = [target['prev_target'] for target in targets]
 
-            backprop_context = torch.no_grad
-            if self._backprop_prev_frame:
-                backprop_context = nullcontext
+            if self.training: # and random.uniform(0, 1) < 0.5:
+            # if self.training:
+                backprop_context = torch.no_grad
+                if self._backprop_prev_frame:
+                    backprop_context = nullcontext
 
-            with backprop_context():
-                if 'prev_prev_image' in targets[0]:
-                    for target, prev_target in zip(targets, prev_targets):
-                        prev_target['prev_target'] = target['prev_prev_target']
+                with backprop_context():
+                    if 'prev_prev_image' in targets[0]:
+                        for target, prev_target in zip(targets, prev_targets):
+                            prev_target['prev_target'] = target['prev_prev_target']
 
-                    prev_prev_targets = [target['prev_prev_target'] for target in targets]
+                        prev_prev_targets = [target['prev_prev_target'] for target in targets]
 
-                    # PREV PREV
-                    prev_prev_out, _, prev_prev_features, _, _ = super().forward([t['prev_prev_image'] for t in targets])
+                        # PREV PREV
+                        prev_prev_out, _, prev_prev_features, _, _ = super().forward([t['prev_prev_image'] for t in targets])
 
-                    prev_prev_outputs_without_aux = {
-                        k: v for k, v in prev_prev_out.items() if 'aux_outputs' not in k}
-                    prev_prev_indices = self._matcher(prev_prev_outputs_without_aux, prev_prev_targets)
+                        prev_prev_outputs_without_aux = {
+                            k: v for k, v in prev_prev_out.items() if 'aux_outputs' not in k}
+                        prev_prev_indices = self._matcher(prev_prev_outputs_without_aux, prev_prev_targets)
 
-                    self.add_track_queries_to_targets(
-                        prev_targets, prev_prev_indices, prev_prev_out, add_false_pos=False)
+                        self.add_track_queries_to_targets(
+                            prev_targets, prev_prev_indices, prev_prev_out, add_false_pos=False)
 
-                    # PREV
-                    prev_out, _, prev_features, _, _ = super().forward(
-                        [t['prev_image'] for t in targets],
-                        prev_targets,
-                        prev_prev_features)
-                else:
-                    prev_out, _, prev_features, _, _ = super().forward([t['prev_image'] for t in targets])
+                        # PREV
+                        prev_out, _, prev_features, _, _ = super().forward(
+                            [t['prev_image'] for t in targets],
+                            prev_targets,
+                            prev_prev_features)
+                    else:
+                        prev_out, _, prev_features, _, _ = super().forward([t['prev_image'] for t in targets])
 
-                prev_outputs_without_aux = {
-                    k: v for k, v in prev_out.items() if 'aux_outputs' not in k}
-                prev_indices = self._matcher(prev_outputs_without_aux, prev_targets)
+                    prev_outputs_without_aux = {
+                        k: v for k, v in prev_out.items() if 'aux_outputs' not in k}
+                    prev_indices = self._matcher(prev_outputs_without_aux, prev_targets)
 
-                self.add_track_queries_to_targets(targets, prev_indices, prev_out)
+                    self.add_track_queries_to_targets(targets, prev_indices, prev_out)
+            else:
+                # if not training we do not add track queries and evaluate detection performance only.
+                # tracking performance is evaluated by the actual tracking evaluation.
+                for target in targets:
+                    device = target['boxes'].device
+
+                    target['track_query_hs_embeds'] = torch.zeros(0, self.hidden_dim).float().to(device)
+                    target['track_queries_placeholder_mask'] = torch.zeros(self.num_queries).bool().to(device)
+                    target['track_queries_mask'] = torch.zeros(self.num_queries).bool().to(device)
+                    target['track_queries_fal_pos_mask'] = torch.zeros(self.num_queries).bool().to(device)
+                    target['track_query_boxes'] = torch.zeros(0, 4).to(device)
+                    target['track_query_match_ids'] = torch.tensor([]).long().to(device)
 
         out, targets, features, memory, hs  = super().forward(samples, targets, prev_features)
 
