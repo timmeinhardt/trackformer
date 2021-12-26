@@ -263,7 +263,7 @@ def train(args: Namespace) -> None:
     if args.eval_only:
         _, coco_evaluator = evaluate(
             model, criterion, postprocessors, data_loader_val, device,
-            output_dir, visualizers['val'], args)
+            output_dir, visualizers['val'], args, 0)
         if args.output_dir:
             utils.save_on_master(coco_evaluator.coco_eval["bbox"].eval, output_dir / "eval.pth")
 

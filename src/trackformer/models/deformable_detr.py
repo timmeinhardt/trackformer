@@ -18,9 +18,7 @@ import torch.nn.functional as F
 from torch import nn
 
 from ..util import box_ops
-from ..util.misc import (NestedTensor, accuracy, get_world_size,
-                         inverse_sigmoid, is_dist_avail_and_initialized,
-                         nested_tensor_from_tensor_list, sigmoid_focal_loss)
+from ..util.misc import NestedTensor, inverse_sigmoid, nested_tensor_from_tensor_list
 from .detr import DETR, PostProcess, SetCriterion
 
 

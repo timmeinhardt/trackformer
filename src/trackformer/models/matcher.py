@@ -19,7 +19,7 @@ class HungarianMatcher(nn.Module):
     """
 
     def __init__(self, cost_class: float = 1, cost_bbox: float = 1, cost_giou: float = 1,
-                 focal_loss: bool = False, focal_alpha: float = 0.25):
+                 focal_loss: bool = False, focal_alpha: float = 0.25, focal_gamma: float = 2.0):
         """Creates the matcher
 
         Params:
@@ -35,6 +35,7 @@ class HungarianMatcher(nn.Module):
         self.cost_giou = cost_giou
         self.focal_loss = focal_loss
         self.focal_alpha = focal_alpha
+        self.focal_gamma = focal_gamma
         assert cost_class != 0 or cost_bbox != 0 or cost_giou != 0, "all costs cant be 0"
 
     @torch.no_grad()
@@ -80,9 +81,8 @@ class HungarianMatcher(nn.Module):
 
         # Compute the classification cost.
         if self.focal_loss:
-            gamma = 2.0
-            neg_cost_class = (1 - self.focal_alpha) * (out_prob ** gamma) * (-(1 - out_prob + 1e-8).log())
-            pos_cost_class = self.focal_alpha * ((1 - out_prob) ** gamma) * (-(out_prob + 1e-8).log())
+            neg_cost_class = (1 - self.focal_alpha) * (out_prob ** self.focal_gamma) * (-(1 - out_prob + 1e-8).log())
+            pos_cost_class = self.focal_alpha * ((1 - out_prob) ** self.focal_gamma) * (-(out_prob + 1e-8).log())
             cost_class = pos_cost_class[:, tgt_ids] - neg_cost_class[:, tgt_ids]
         else:
             # Contrary to the loss, we don't use the NLL, but approximate it in 1 - proba[target class].
@@ -136,4 +136,5 @@ def build_matcher(args):
         cost_bbox=args.set_cost_bbox,
         cost_giou=args.set_cost_giou,
         focal_loss=args.focal_loss,
-        focal_alpha=args.focal_alpha,)
+        focal_alpha=args.focal_alpha,
+        focal_gamma=args.focal_gamma,)

@@ -143,7 +143,7 @@ class SetCriterion(nn.Module):
         2) we supervise each pair of matched ground-truth / prediction (supervise class and box)
     """
     def __init__(self, num_classes, matcher, weight_dict, eos_coef, losses,
-                 focal_loss, focal_alpha, tracking, track_query_false_positive_eos_weight):
+                 focal_loss, focal_alpha, focal_gamma, tracking, track_query_false_positive_eos_weight):
         """ Create the criterion.
         Parameters:
             num_classes: number of object categories, omitting the special no-object category
@@ -165,6 +165,7 @@ class SetCriterion(nn.Module):
         self.register_buffer('empty_weight', empty_weight)
         self.focal_loss = focal_loss
         self.focal_alpha = focal_alpha
+        self.focal_gamma = focal_gamma
         self.tracking = tracking
         self.track_query_false_positive_eos_weight = track_query_false_positive_eos_weight
 
@@ -233,7 +234,9 @@ class SetCriterion(nn.Module):
             query_mask = torch.stack([~t['track_queries_placeholder_mask'] for t in targets])[..., None]
             query_mask = query_mask.repeat(1, 1, self.num_classes)
 
-        loss_ce = sigmoid_focal_loss(src_logits, target_classes_onehot, num_boxes, alpha=self.focal_alpha, gamma=2, query_mask=query_mask)
+        loss_ce = sigmoid_focal_loss(
+            src_logits, target_classes_onehot, num_boxes,
+            alpha=self.focal_alpha, gamma=self.focal_gamma, query_mask=query_mask)
 
         if self.tracking:
             mean_num_queries = torch.tensor([len(m.nonzero()) for m in query_mask]).float().mean()
@@ -245,6 +248,26 @@ class SetCriterion(nn.Module):
         if log:
             # TODO this should probably be a separate loss, not hacked in this one here
             losses['class_error'] = 100 - accuracy(src_logits[idx], target_classes_o)[0]
+
+        # compute seperate track and object query losses
+        # loss_ce = sigmoid_focal_loss(
+        #     src_logits, target_classes_onehot, num_boxes,
+        #     alpha=self.focal_alpha, gamma=self.focal_gamma, query_mask=query_mask, reduction=False)
+        # loss_ce *= src_logits.shape[1]
+
+        # track_query_target_masks = []
+        # for t, ind in zip(targets, indices):
+        #     track_query_target_mask = torch.zeros_like(ind[1]).bool()
+
+        #     for i in t['track_query_match_ids']:
+        #         track_query_target_mask[ind[1].eq(i).nonzero()[0]] = True
+
+        #     track_query_target_masks.append(track_query_target_mask)
+        # track_query_target_masks = torch.cat(track_query_target_masks)
+
+        # losses['loss_ce_track_queries'] = loss_ce[idx][track_query_target_masks].mean(1).sum() / num_boxes
+        # losses['loss_ce_object_queries'] = loss_ce[idx][~track_query_target_masks].mean(1).sum() / num_boxes
+
         return losses
 
     @torch.no_grad()
@@ -282,6 +305,24 @@ class SetCriterion(nn.Module):
             box_ops.box_cxcywh_to_xyxy(src_boxes),
             box_ops.box_cxcywh_to_xyxy(target_boxes)))
         losses['loss_giou'] = loss_giou.sum() / num_boxes
+
+        # compute seperate track and object query losses
+        # track_query_target_masks = []
+        # for t, ind in zip(targets, indices):
+        #     track_query_target_mask = torch.zeros_like(ind[1]).bool()
+
+        #     for i in t['track_query_match_ids']:
+        #         track_query_target_mask[ind[1].eq(i).nonzero()[0]] = True
+
+        #     track_query_target_masks.append(track_query_target_mask)
+        # track_query_target_masks = torch.cat(track_query_target_masks)
+
+        # losses['loss_bbox_track_queries'] = loss_bbox[track_query_target_masks].sum() / num_boxes
+        # losses['loss_bbox_object_queries'] = loss_bbox[~track_query_target_masks].sum() / num_boxes
+
+        # losses['loss_giou_track_queries'] = loss_giou[track_query_target_masks].sum() / num_boxes
+        # losses['loss_giou_object_queries'] = loss_giou[~track_query_target_masks].sum() / num_boxes
+
         return losses
 
     def loss_masks(self, outputs, targets, indices, num_boxes):

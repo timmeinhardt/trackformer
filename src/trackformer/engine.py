@@ -226,6 +226,7 @@ def evaluate(model, criterion, postprocessors, data_loader, device,
             results_orig = {
                 target['image_id'].item(): output
                 for target, output in zip(targets, results_orig)}
+
             coco_evaluator.update(results_orig)
 
         if panoptic_evaluator is not None:
@@ -333,6 +334,7 @@ def evaluate(model, criterion, postprocessors, data_loader, device,
     if visualizers:
         vis_epoch = visualizers['epoch_metrics']
         y_data = [stats[legend_name] for legend_name in vis_epoch.viz_opts['legend']]
+
         vis_epoch.plot(y_data, epoch)
 
         visualizers['epoch_eval'].plot(eval_stats, epoch)

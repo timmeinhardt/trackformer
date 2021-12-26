@@ -108,6 +108,7 @@ def build_model(args):
         losses=losses,
         focal_loss=args.focal_loss,
         focal_alpha=args.focal_alpha,
+        focal_gamma=args.focal_gamma,
         tracking=args.tracking,
         track_query_false_positive_eos_weight=args.track_query_false_positive_eos_weight,)
     criterion.to(device)

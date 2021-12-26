@@ -185,8 +185,9 @@ class DETRTrackingBase(nn.Module):
         if targets is not None and not self._tracking:
             prev_targets = [target['prev_target'] for target in targets]
 
-            if self.training: # and random.uniform(0, 1) < 0.5:
-            # if self.training:
+            # if self.training and random.uniform(0, 1) < 0.5:
+            if self.training:
+            # if True:
                 backprop_context = torch.no_grad
                 if self._backprop_prev_frame:
                     backprop_context = nullcontext
