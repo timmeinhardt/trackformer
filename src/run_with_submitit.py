@@ -110,7 +110,7 @@ def main(args: Namespace):
         slurm_constraint=args.slurm_constraint,
         slurm_comment=args.slurm_comment,
         slurm_exclude=args.slurm_exclude,
-        # slurm_gres=slurm_gres
+        slurm_gres=slurm_gres
     )
 
     executor.update_parameters(name="fair_track")

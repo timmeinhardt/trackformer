@@ -1,3 +1,4 @@
+import math
 import random
 from contextlib import nullcontext
 
@@ -38,16 +39,28 @@ class DETRTrackingBase(nn.Module):
     def add_track_queries_to_targets(self, targets, prev_indices, prev_out, add_false_pos=True):
         device = prev_out['pred_boxes'].device
 
+        # for i, (target, prev_ind) in enumerate(zip(targets, prev_indices)):
+        min_prev_target_ind = min([len(prev_ind[1]) for prev_ind in prev_indices])
+        num_prev_target_ind = 0
+        if min_prev_target_ind:
+            num_prev_target_ind = torch.randint(0, min_prev_target_ind + 1, (1,)).item()
+
+        num_prev_target_ind_for_fps = 0
+        if num_prev_target_ind:
+            num_prev_target_ind_for_fps = \
+                torch.randint(int(math.ceil(self._track_query_false_positive_prob * num_prev_target_ind)) + 1, (1,)).item()
+
         for i, (target, prev_ind) in enumerate(zip(targets, prev_indices)):
             prev_out_ind, prev_target_ind = prev_ind
 
             # random subset
-            if self._track_query_false_negative_prob and len(prev_target_ind):
+            if self._track_query_false_negative_prob: # and len(prev_target_ind):
                 # random_subset_mask = torch.empty(len(prev_target_ind)).uniform_()
                 # random_subset_mask = random_subset_mask.ge(
                 #     self._track_query_false_negative_prob)
 
-                random_subset_mask = torch.randperm(len(prev_target_ind))[:torch.randint(0, len(prev_target_ind), (1,))]
+                # random_subset_mask = torch.randperm(len(prev_target_ind))[:torch.randint(0, len(prev_target_ind) + 1, (1,))]
+                random_subset_mask = torch.randperm(len(prev_target_ind))[:num_prev_target_ind]
 
                 # if not len(random_subset_mask):
                 #     target['track_query_hs_embeds'] = torch.zeros(0, self.hidden_dim).float().to(device)
@@ -87,25 +100,38 @@ class DETRTrackingBase(nn.Module):
                     if ind not in prev_out_ind]
 
                 random_false_out_ind = []
-                for prev_box_matched in prev_boxes_matched:
 
-                    if random.uniform(0, 1) < self._track_query_false_positive_prob:
-                        prev_boxes_unmatched = prev_out['pred_boxes'][i, not_prev_out_ind]
+                prev_target_ind_for_fps = torch.randperm(num_prev_target_ind)[:num_prev_target_ind_for_fps]
 
-                        # only cxcy
-                        # box_dists = prev_box_matched[:2].sub(prev_boxes_unmatched[:, :2]).abs()
-                        # box_dists = box_dists.pow(2).sum(dim=-1).sqrt()
-                        # box_weights = 1.0 / box_dists.add(1e-8)
+                for j, prev_box_matched in enumerate(prev_boxes_matched):
+                    if j not in prev_target_ind_for_fps:
+                        continue
 
-                        prev_box_ious, _ = box_ops.box_iou(
-                            box_ops.box_cxcywh_to_xyxy(prev_box_matched.unsqueeze(dim=0)),
-                            box_ops.box_cxcywh_to_xyxy(prev_boxes_unmatched))
-                        box_weights = prev_box_ious[0]
+                    # if random.uniform(0, 1) < self._track_query_false_positive_prob:
+                    prev_boxes_unmatched = prev_out['pred_boxes'][i, not_prev_out_ind]
 
-                        if box_weights.gt(0.0).any():
-                            random_false_out_idx = not_prev_out_ind.pop(
-                                torch.multinomial(box_weights.cpu(), 1).item())
-                            random_false_out_ind.append(random_false_out_idx)
+                    # only cxcy
+                    # box_dists = prev_box_matched[:2].sub(prev_boxes_unmatched[:, :2]).abs()
+                    # box_dists = box_dists.pow(2).sum(dim=-1).sqrt()
+                    # box_weights = 1.0 / box_dists.add(1e-8)
+
+                    # prev_box_ious, _ = box_ops.box_iou(
+                    #     box_ops.box_cxcywh_to_xyxy(prev_box_matched.unsqueeze(dim=0)),
+                    #     box_ops.box_cxcywh_to_xyxy(prev_boxes_unmatched))
+                    # box_weights = prev_box_ious[0]
+
+                    # dist = sqrt( (x2 - x1)**2 + (y2 - y1)**2 )
+                    box_weights = \
+                        prev_box_matched.unsqueeze(dim=0)[:, :2] - \
+                        prev_boxes_unmatched[:, :2]
+                    box_weights = box_weights[:, 0] ** 2 + box_weights[:, 0] ** 2
+                    box_weights = torch.sqrt(box_weights)
+
+                    # if box_weights.gt(0.0).any():
+                    # if box_weights.gt(0.0).any():
+                    random_false_out_idx = not_prev_out_ind.pop(
+                        torch.multinomial(box_weights.cpu(), 1).item())
+                    random_false_out_ind.append(random_false_out_idx)
 
                 prev_out_ind = torch.tensor(prev_out_ind.tolist() + random_false_out_ind).long()
 
@@ -158,6 +184,8 @@ class DETRTrackingBase(nn.Module):
             if not num_add:
                 target['track_queries_placeholder_mask'] = torch.zeros_like(target['track_queries_mask']).bool()
                 continue
+
+            raise NotImplementedError
 
             target['track_query_hs_embeds'] = torch.cat(
                 [torch.zeros(num_add, self.hidden_dim).to(device),

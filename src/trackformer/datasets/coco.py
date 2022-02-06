@@ -77,6 +77,7 @@ class CocoDetection(torchvision.datasets.CocoDetection):
 
         return img, target
 
+    # TODO: add to the transforms and merge norm_transforms into transforms
     def _add_random_jitter(self, img, target):
         if self._prev_frame_rnd_augs:
             orig_w, orig_h = img.size
