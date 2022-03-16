@@ -103,10 +103,11 @@ class DETRTrackingBase(nn.Module):
 
                 prev_target_ind_for_fps = torch.randperm(num_prev_target_ind)[:num_prev_target_ind_for_fps]
 
-                for j, prev_box_matched in enumerate(prev_boxes_matched):
-                    if j not in prev_target_ind_for_fps:
-                        continue
+                # for j, prev_box_matched in enumerate(prev_boxes_matched):
+                #     if j not in prev_target_ind_for_fps:
+                #         continue
 
+                for j in prev_target_ind_for_fps:
                     # if random.uniform(0, 1) < self._track_query_false_positive_prob:
                     prev_boxes_unmatched = prev_out['pred_boxes'][i, not_prev_out_ind]
 
@@ -121,16 +122,22 @@ class DETRTrackingBase(nn.Module):
                     # box_weights = prev_box_ious[0]
 
                     # dist = sqrt( (x2 - x1)**2 + (y2 - y1)**2 )
-                    box_weights = \
-                        prev_box_matched.unsqueeze(dim=0)[:, :2] - \
-                        prev_boxes_unmatched[:, :2]
-                    box_weights = box_weights[:, 0] ** 2 + box_weights[:, 0] ** 2
-                    box_weights = torch.sqrt(box_weights)
 
-                    # if box_weights.gt(0.0).any():
-                    # if box_weights.gt(0.0).any():
-                    random_false_out_idx = not_prev_out_ind.pop(
-                        torch.multinomial(box_weights.cpu(), 1).item())
+                    if len(prev_boxes_matched) > j:
+                        prev_box_matched = prev_boxes_matched[j]
+                        box_weights = \
+                            prev_box_matched.unsqueeze(dim=0)[:, :2] - \
+                            prev_boxes_unmatched[:, :2]
+                        box_weights = box_weights[:, 0] ** 2 + box_weights[:, 0] ** 2
+                        box_weights = torch.sqrt(box_weights)
+
+                        # if box_weights.gt(0.0).any():
+                        # if box_weights.gt(0.0).any():
+                        random_false_out_idx = not_prev_out_ind.pop(
+                            torch.multinomial(box_weights.cpu(), 1).item())
+                    else:
+                        random_false_out_idx = not_prev_out_ind.pop(torch.randperm(len(not_prev_out_ind))[0])
+
                     random_false_out_ind.append(random_false_out_idx)
 
                 prev_out_ind = torch.tensor(prev_out_ind.tolist() + random_false_out_ind).long()
@@ -244,6 +251,8 @@ class DETRTrackingBase(nn.Module):
                             prev_prev_features)
                     else:
                         prev_out, _, prev_features, _, _ = super().forward([t['prev_image'] for t in targets])
+
+                    # prev_out = {k: v.detach() for k, v in prev_out.items() if torch.is_tensor(v)}
 
                     prev_outputs_without_aux = {
                         k: v for k, v in prev_out.items() if 'aux_outputs' not in k}

@@ -39,19 +39,24 @@ if __name__ == "__main__":
     configs = [
         {'dataset_name': ["MOT17-02-FRCNN", "MOT17-04-FRCNN", "MOT17-05-FRCNN", "MOT17-09-FRCNN", "MOT17-10-FRCNN", "MOT17-11-FRCNN", "MOT17-13-FRCNN"],
          'frame_range': {'start': 0.5},
-         'obj_detect_checkpoint_file': '/storage/user/meinhard/fair_track/models/crowdhuman_scratch_num_queries_500_batch_size=2_num_gpus_7_num_classes_20_AP_det_overflow_boxes_True_prev_frame_rnd_augs_0_2_uniform_false_negative_prob_num_classes_20_multi_frame_hidden_dim_288_sep_encoders_batch_queries/checkpoint_epoch_80.pth'},
+         'obj_detect_checkpoint_file': '/storage/user/meinhard/fair_track/models/mot_crowdhuman_num_queries_500_batch_size=2_num_gpus_7_num_classes_20_AP_det_overflow_boxes_True_prev_frame_rnd_augs_0_2_uniform_false_negative_prob_num_classes_20_multi_frame_hidden_dim_288_sep_encoders_batch_queries_lr_drop_10/checkpoint_epoch_35.pth'},
     ]
 
     tracker_param_grids = {
-        'detection_obj_score_thresh': [0.3, 0.4, 0.5, 0.6, 0.7],
-        'track_obj_score_thresh': [0.4, 0.5, 0.6, 0.7, 0.8],
-        # 'detection_obj_score_thresh': [0.4],
-        # 'track_obj_score_thresh': [0.6],
-        'detection_nms_thresh': [0.9],
-        'track_nms_thresh': [0.9],
+        # 'detection_obj_score_thresh': [0.3, 0.4, 0.5, 0.6, 0.7],
+        # 'track_obj_score_thresh': [0.4, 0.5, 0.6, 0.7, 0.8],
+        'detection_obj_score_thresh': [0.4],
+        'track_obj_score_thresh': [0.4],
+        'detection_nms_thresh': [0.95, 0.9],
+        'track_nms_thresh': [0.95, 0.9],
+        # 'detection_nms_thresh': [0.9],
+        # 'track_nms_thresh': [0.9],
         'reid_sim_threshold': [0.0],
+        # 'reid_score_thresh': [0.4, 0.5, 0.6],
+        # 'inactive_patience': [-1, 5, 10]
         'reid_score_thresh': [0.8],
-        'inactive_patience': [-1]}
+        'inactive_patience': [-1]
+        }
 
     # compute all config combinations
     tracker_param_cfgs = [dict(zip(tracker_param_grids, v))
@@ -91,8 +96,7 @@ if __name__ == "__main__":
             tracker_cfg[m] = np.array(tracker_cfg[m]).mean()
 
     for cfg in tracker_param_cfgs:
-        print(cfg['config'])
-        print([cfg[m] for m in metrics])
+        print([cfg[m] for m in metrics], cfg['config'])
 
     # compute and plot best metric config
     for m in metrics:

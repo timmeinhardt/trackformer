@@ -28,9 +28,11 @@ ex.add_named_config('crowdhuman', 'cfgs/train_crowdhuman.yaml')
 ex.add_named_config('mot17', 'cfgs/train_mot17.yaml')
 ex.add_named_config('mot17_cross_val', 'cfgs/train_mot17_cross_val.yaml')
 ex.add_named_config('mots20', 'cfgs/train_mots20.yaml')
+ex.add_named_config('mot20', 'cfgs/train_mot20.yaml')
 ex.add_named_config('coco_person_masks', 'cfgs/train_coco_person_masks.yaml')
 ex.add_named_config('full_res', 'cfgs/train_full_res.yaml')
 ex.add_named_config('focal_loss', 'cfgs/train_focal_loss.yaml')
+ex.add_named_config('trackformer', 'cfgs/train_trackformer.yaml')
 
 
 def train(args: Namespace) -> None:
@@ -198,7 +200,8 @@ def train(args: Namespace) -> None:
                     # person and no-object class
                     # resume_value = checkpoint_value[[1, -1]]
                     # resume_value = checkpoint_value[[0, -1]]
-                    resume_value = checkpoint_value[[1,]]
+                    # resume_value = checkpoint_value[[1,]]
+                    resume_value = checkpoint_value[list(range(1, 21))]
                     # resume_value = v
                     # print(f'Load {k} {tuple(v.shape)} from scratch.')
                 else:

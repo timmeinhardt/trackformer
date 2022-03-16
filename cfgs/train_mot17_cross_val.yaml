@@ -1,6 +1,6 @@
 dataset: mot
-train_split: mot17_train_1_coco
-val_split: mot17_val_1_coco
+train_split: mot17_train_cross_val_frame_0_0_to_0_5_coco
+val_split: mot17_train_cross_val_frame_0_5_to_1_0_coco
 
 resume: models/r50_deformable_detr-checkpoint.pth
 

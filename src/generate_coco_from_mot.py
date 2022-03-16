@@ -321,24 +321,37 @@ if __name__ == '__main__':
 
     elif args.mot20:
         data_root = 'data/MOT20'
+        train_seqs = ['MOT20-01', 'MOT20-02', 'MOT20-03', 'MOT20-05',]
         # TRAIN SET
         generate_coco_from_mot(
             'mot20_train_coco',
-            seqs_names=['MOT20-01', 'MOT20-02', 'MOT20-03', 'MOT20-05',],
+            seqs_names=train_seqs,
             data_root=data_root)
 
-        for i in range(0, 4):
-            train_seqs = ['MOT20-01', 'MOT20-02', 'MOT20-03', 'MOT20-05',]
-            val_seqs = train_seqs.pop(i)
+        for i in range(0, len(train_seqs)):
+            train_seqs_copy = train_seqs.copy()
+            val_seqs = train_seqs_copy.pop(i)
 
             generate_coco_from_mot(
                 f'mot20_train_{i + 1}_coco',
-                seqs_names=train_seqs,
+                seqs_names=train_seqs_copy,
                 data_root=data_root)
             generate_coco_from_mot(
                 f'mot20_val_{i + 1}_coco',
                 seqs_names=val_seqs,
                 data_root=data_root)
+
+        # CROSS VAL FRAME SPLIT
+        generate_coco_from_mot(
+            'mot20_train_cross_val_frame_0_0_to_0_5_coco',
+            seqs_names=train_seqs,
+            frame_range={'start': 0, 'end': 0.5},
+            data_root=data_root)
+        generate_coco_from_mot(
+            'mot20_train_cross_val_frame_0_5_to_1_0_coco',
+            seqs_names=train_seqs,
+            frame_range={'start': 0.5, 'end': 1.0},
+            data_root=data_root)
 
     else:
         #

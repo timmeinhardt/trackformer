@@ -6,7 +6,7 @@ lr_linear_proj_mult: 0.1
 lr_track: 0.0001
 overwrite_lrs: false
 overwrite_lr_scheduler: false
-batch_size: 1
+batch_size: 2
 weight_decay: 0.0001
 epochs: 50
 lr_drop: 40
@@ -94,7 +94,7 @@ crowdhuman_path: data/CrowdHuman
 # allows for joint training of mot and crowdhuman with
 # the `mot_crowdhuman` dataset
 crowdhuman_train_split: null
-coco_and_crowdhuman_prev_frame_rnd_augs: 0.05
+coco_and_crowdhuman_prev_frame_rnd_augs: 0.2
 img_transform:
   max_size: 1333
   val_width: 800
@@ -115,10 +115,10 @@ start_epoch: 1
 eval_only: false
 eval_train: false
 num_workers: 2
-val_interval: 1
+val_interval: 5
 debug: false
 # epoch interval for model saving. if 0 only save last and best models
-save_model_interval: 0
+save_model_interval: 5
 # distributed training parameters
 # number of distributed processes
 world_size: 1
