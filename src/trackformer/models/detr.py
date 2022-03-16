@@ -196,10 +196,10 @@ class SetCriterion(nn.Module):
                     target_classes = target_classes.clone()
                     target_classes[i, target['track_queries_fal_pos_mask']] = 0
 
-        weight = None
-        if self.tracking:
-            weight = torch.stack([~t['track_queries_placeholder_mask'] for t in targets]).float()
-            loss_ce *= weight
+        # weight = None
+        # if self.tracking:
+        #     weight = torch.stack([~t['track_queries_placeholder_mask'] for t in targets]).float()
+        #     loss_ce *= weight
 
         loss_ce = loss_ce.sum() / self.empty_weight[target_classes].sum()
 
@@ -229,20 +229,22 @@ class SetCriterion(nn.Module):
 
         target_classes_onehot = target_classes_onehot[:,:,:-1]
 
-        query_mask = None
-        if self.tracking:
-            query_mask = torch.stack([~t['track_queries_placeholder_mask'] for t in targets])[..., None]
-            query_mask = query_mask.repeat(1, 1, self.num_classes)
+        # query_mask = None
+        # if self.tracking:
+        #     query_mask = torch.stack([~t['track_queries_placeholder_mask'] for t in targets])[..., None]
+        #     query_mask = query_mask.repeat(1, 1, self.num_classes)
 
         loss_ce = sigmoid_focal_loss(
             src_logits, target_classes_onehot, num_boxes,
-            alpha=self.focal_alpha, gamma=self.focal_gamma, query_mask=query_mask)
+            alpha=self.focal_alpha, gamma=self.focal_gamma)
+            # , query_mask=query_mask)
 
-        if self.tracking:
-            mean_num_queries = torch.tensor([len(m.nonzero()) for m in query_mask]).float().mean()
-            loss_ce *= mean_num_queries
-        else:
-            loss_ce *= src_logits.shape[1]
+        # if self.tracking:
+        #     mean_num_queries = torch.tensor([len(m.nonzero()) for m in query_mask]).float().mean()
+        #     loss_ce *= mean_num_queries
+        # else:
+        #     loss_ce *= src_logits.shape[1]
+        loss_ce *= src_logits.shape[1]
         losses = {'loss_ce': loss_ce}
 
         if log:

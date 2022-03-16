@@ -183,38 +183,38 @@ class DETRTrackingBase(nn.Module):
             ]).bool()
 
         # add placeholder track queries to allow for batch sizes > 1
-        max_track_query_hs_embeds = max([len(t['track_query_hs_embeds']) for t in targets])
-        for i, target in enumerate(targets):
+        # max_track_query_hs_embeds = max([len(t['track_query_hs_embeds']) for t in targets])
+        # for i, target in enumerate(targets):
 
-            num_add = max_track_query_hs_embeds - len(target['track_query_hs_embeds'])
+        #     num_add = max_track_query_hs_embeds - len(target['track_query_hs_embeds'])
 
-            if not num_add:
-                target['track_queries_placeholder_mask'] = torch.zeros_like(target['track_queries_mask']).bool()
-                continue
+        #     if not num_add:
+        #         target['track_queries_placeholder_mask'] = torch.zeros_like(target['track_queries_mask']).bool()
+        #         continue
 
-            raise NotImplementedError
+        #     raise NotImplementedError
 
-            target['track_query_hs_embeds'] = torch.cat(
-                [torch.zeros(num_add, self.hidden_dim).to(device),
-                 target['track_query_hs_embeds']
-            ])
-            target['track_query_boxes'] = torch.cat(
-                [torch.zeros(num_add, 4).to(device),
-                 target['track_query_boxes']
-            ])
+        #     target['track_query_hs_embeds'] = torch.cat(
+        #         [torch.zeros(num_add, self.hidden_dim).to(device),
+        #          target['track_query_hs_embeds']
+        #     ])
+        #     target['track_query_boxes'] = torch.cat(
+        #         [torch.zeros(num_add, 4).to(device),
+        #          target['track_query_boxes']
+        #     ])
 
-            target['track_queries_mask'] = torch.cat([
-                torch.tensor([True, ] * num_add).to(device),
-                target['track_queries_mask']
-            ]).bool()
+        #     target['track_queries_mask'] = torch.cat([
+        #         torch.tensor([True, ] * num_add).to(device),
+        #         target['track_queries_mask']
+        #     ]).bool()
 
-            target['track_queries_fal_pos_mask'] = torch.cat([
-                torch.tensor([False, ] * num_add).to(device),
-                target['track_queries_fal_pos_mask']
-            ]).bool()
+        #     target['track_queries_fal_pos_mask'] = torch.cat([
+        #         torch.tensor([False, ] * num_add).to(device),
+        #         target['track_queries_fal_pos_mask']
+        #     ]).bool()
 
-            target['track_queries_placeholder_mask'] = torch.zeros_like(target['track_queries_mask']).bool()
-            target['track_queries_placeholder_mask'][:num_add] = True
+        #     target['track_queries_placeholder_mask'] = torch.zeros_like(target['track_queries_mask']).bool()
+        #     target['track_queries_placeholder_mask'][:num_add] = True
 
     def forward(self, samples: NestedTensor, targets: list = None, prev_features=None):
         if targets is not None and not self._tracking:
@@ -266,7 +266,7 @@ class DETRTrackingBase(nn.Module):
                     device = target['boxes'].device
 
                     target['track_query_hs_embeds'] = torch.zeros(0, self.hidden_dim).float().to(device)
-                    target['track_queries_placeholder_mask'] = torch.zeros(self.num_queries).bool().to(device)
+                    # target['track_queries_placeholder_mask'] = torch.zeros(self.num_queries).bool().to(device)
                     target['track_queries_mask'] = torch.zeros(self.num_queries).bool().to(device)
                     target['track_queries_fal_pos_mask'] = torch.zeros(self.num_queries).bool().to(device)
                     target['track_query_boxes'] = torch.zeros(0, 4).to(device)

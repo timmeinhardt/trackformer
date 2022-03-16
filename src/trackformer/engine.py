@@ -26,24 +26,36 @@ def make_results(outputs, targets, postprocessors, tracking, return_only_orig=Tr
     orig_target_sizes = torch.stack([t["orig_size"] for t in targets], dim=0)
 
     # remove placeholder track queries
-    results_mask = None
-    if tracking:
-        results_mask = [~t['track_queries_placeholder_mask'] for t in targets]
-        for target, res_mask in zip(targets, results_mask):
-            target['track_queries_mask'] = target['track_queries_mask'][res_mask]
-            target['track_queries_fal_pos_mask'] = target['track_queries_fal_pos_mask'][res_mask]
+    # results_mask = None
+    # if tracking:
+    #     results_mask = [~t['track_queries_placeholder_mask'] for t in targets]
+    #     for target, res_mask in zip(targets, results_mask):
+    #         target['track_queries_mask'] = target['track_queries_mask'][res_mask]
+    #         target['track_queries_fal_pos_mask'] = target['track_queries_fal_pos_mask'][res_mask]
+
+    # results = None
+    # if not return_only_orig:
+    #     results = postprocessors['bbox'](outputs, target_sizes, results_mask)
+    # results_orig = postprocessors['bbox'](outputs, orig_target_sizes, results_mask)
+
+    # if 'segm' in postprocessors:
+    #     results_orig = postprocessors['segm'](
+    #         results_orig, outputs, orig_target_sizes, target_sizes, results_mask)
+    #     if not return_only_orig:
+    #         results = postprocessors['segm'](
+    #             results, outputs, target_sizes, target_sizes, results_mask)
 
     results = None
     if not return_only_orig:
-        results = postprocessors['bbox'](outputs, target_sizes, results_mask)
-    results_orig = postprocessors['bbox'](outputs, orig_target_sizes, results_mask)
+        results = postprocessors['bbox'](outputs, target_sizes)
+    results_orig = postprocessors['bbox'](outputs, orig_target_sizes)
 
     if 'segm' in postprocessors:
         results_orig = postprocessors['segm'](
-            results_orig, outputs, orig_target_sizes, target_sizes, results_mask)
+            results_orig, outputs, orig_target_sizes, target_sizes)
         if not return_only_orig:
             results = postprocessors['segm'](
-                results, outputs, target_sizes, target_sizes, results_mask)
+                results, outputs, target_sizes, target_sizes)
 
     if results is None:
         return results_orig, results
