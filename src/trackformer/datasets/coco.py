@@ -41,8 +41,9 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         target = {'image_id': image_id,
                   'annotations': target}
         img, target = self.prepare(img, target)
-
-        target['track_ids'] = torch.arange(len(target['labels']))
+        
+        if 'track_ids' not in target:
+            target['track_ids'] = torch.arange(len(target['labels']))
 
         if self._transforms is not None:
             img, target = self._transforms(img, target)
