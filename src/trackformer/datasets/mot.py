@@ -13,6 +13,7 @@ import torch
 
 from . import transforms as T
 from .coco import CocoDetection, make_coco_transforms
+from .coco import build as build_coco
 from .crowdhuman import build_crowdhuman
 
 
@@ -176,5 +177,24 @@ def build_mot_crowdhuman(image_set, args):
     if image_set == 'train':
         dataset = torch.utils.data.ConcatDataset(
             [dataset, crowdhuman_dataset])
+
+    return dataset
+
+
+def build_mot_coco_person(image_set, args):
+    if image_set == 'train':
+        args_coco_person = copy.deepcopy(args)
+        args_coco_person.train_split = args.coco_person_train_split
+
+        coco_person_dataset = build_coco('train', args_coco_person, 'person_keypoints')
+
+        if getattr(args, f"{image_set}_split") is None:
+            return coco_person_dataset
+
+    dataset = build_mot(image_set, args)
+
+    if image_set == 'train':
+        dataset = torch.utils.data.ConcatDataset(
+            [dataset, coco_person_dataset])
 
     return dataset

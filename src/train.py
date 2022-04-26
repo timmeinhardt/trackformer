@@ -24,7 +24,8 @@ ex = sacred.Experiment('train')
 ex.add_config('cfgs/train.yaml')
 ex.add_named_config('deformable', 'cfgs/train_deformable.yaml')
 ex.add_named_config('tracking', 'cfgs/train_tracking.yaml')
-ex.add_named_config('crowdhuman', 'cfgs/train_crowdhuman.yaml')
+ex.add_named_config('mot_crowdhuman', 'cfgs/train_mot_crowdhuman.yaml')
+ex.add_named_config('mot_coco_person', 'cfgs/train_mot_coco_person.yaml')
 ex.add_named_config('mot17', 'cfgs/train_mot17.yaml')
 ex.add_named_config('mot17_cross_val', 'cfgs/train_mot17_cross_val.yaml')
 ex.add_named_config('mots20', 'cfgs/train_mots20.yaml')
@@ -201,7 +202,7 @@ def train(args: Namespace) -> None:
                     # resume_value = checkpoint_value[[1, -1]]
                     # resume_value = checkpoint_value[[0, -1]]
                     # resume_value = checkpoint_value[[1,]]
-                    resume_value = checkpoint_value[list(range(1, 21))]
+                    resume_value = checkpoint_value[list(range(0, 20))]
                     # resume_value = v
                     # print(f'Load {k} {tuple(v.shape)} from scratch.')
                 else:

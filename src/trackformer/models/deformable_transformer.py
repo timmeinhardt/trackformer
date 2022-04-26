@@ -23,17 +23,23 @@ class DeformableTransformer(nn.Module):
                  num_encoder_layers=6, num_decoder_layers=6, dim_feedforward=1024,
                  dropout=0.1, activation="relu", return_intermediate_dec=False,
                  num_feature_levels=4, dec_n_points=4,  enc_n_points=4,
-                 two_stage=False, two_stage_num_proposals=300):
+                 two_stage=False, two_stage_num_proposals=300,
+                 multi_frame_attention_separate_encoder=False):
         super().__init__()
 
         self.d_model = d_model
         self.nhead = nhead
         self.two_stage = two_stage
         self.two_stage_num_proposals = two_stage_num_proposals
+        self.num_feature_levels = num_feature_levels
+        self.multi_frame_attention_separate_encoder = multi_frame_attention_separate_encoder
 
+        enc_num_feature_levels = num_feature_levels
+        if multi_frame_attention_separate_encoder:
+            enc_num_feature_levels = enc_num_feature_levels // 2
         encoder_layer = DeformableTransformerEncoderLayer(d_model, dim_feedforward,
                                                           dropout, activation,
-                                                          num_feature_levels, nhead, enc_n_points)
+                                                          enc_num_feature_levels, nhead, enc_n_points)
         self.encoder = DeformableTransformerEncoder(encoder_layer, num_encoder_layers)
 
         decoder_layer = DeformableTransformerDecoderLayer(d_model, dim_feedforward,
@@ -140,6 +146,7 @@ class DeformableTransformer(nn.Module):
             mask = mask.flatten(1)
             pos_embed = pos_embed.flatten(2).transpose(1, 2)
             lvl_pos_embed = pos_embed + self.level_embed[lvl].view(1, 1, -1)
+            # lvl_pos_embed = pos_embed + self.level_embed[lvl % self.num_feature_levels].view(1, 1, -1)
             lvl_pos_embed_flatten.append(lvl_pos_embed)
             src_flatten.append(src)
             mask_flatten.append(mask)
@@ -150,7 +157,22 @@ class DeformableTransformer(nn.Module):
         valid_ratios = torch.stack([self.get_valid_ratio(m) for m in masks], 1)
 
         # encoder
-        memory = self.encoder(src_flatten, spatial_shapes, valid_ratios, lvl_pos_embed_flatten, mask_flatten)
+        if self.multi_frame_attention_separate_encoder:
+            prev_memory = self.encoder(
+                src_flatten[:, :src_flatten.shape[1] // 2],
+                spatial_shapes[:self.num_feature_levels // 2],
+                valid_ratios[:, :self.num_feature_levels // 2],
+                lvl_pos_embed_flatten[:, :src_flatten.shape[1] // 2],
+                mask_flatten[:, :src_flatten.shape[1] // 2])
+            memory = self.encoder(
+                src_flatten[:, src_flatten.shape[1] // 2:],
+                spatial_shapes[self.num_feature_levels // 2:],
+                valid_ratios[:, self.num_feature_levels // 2:],
+                lvl_pos_embed_flatten[:, src_flatten.shape[1] // 2:],
+                mask_flatten[:, src_flatten.shape[1] // 2:])
+            memory = torch.cat([memory, prev_memory], 1)
+        else:
+            memory = self.encoder(src_flatten, spatial_shapes, valid_ratios, lvl_pos_embed_flatten, mask_flatten)
 
         # prepare input for decoder
         bs, _, c = memory.shape
@@ -202,8 +224,8 @@ class DeformableTransformer(nn.Module):
 
                 reference_points = torch.cat([prev_boxes[..., :2], reference_points], dim=1)
 
-                if 'track_queries_placeholder_mask' in targets[0]:
-                    query_attn_mask = torch.stack([t['track_queries_placeholder_mask'] for t in targets])
+                # if 'track_queries_placeholder_mask' in targets[0]:
+                #     query_attn_mask = torch.stack([t['track_queries_placeholder_mask'] for t in targets])
 
             init_reference_out = reference_points
 
@@ -410,6 +432,11 @@ class DeformableTransformerDecoder(nn.Module):
 
 
 def build_deforamble_transformer(args):
+
+    num_feature_levels = args.num_feature_levels
+    if args.multi_frame_attention:
+        num_feature_levels *= 2
+
     return DeformableTransformer(
         d_model=args.hidden_dim,
         nhead=args.nheads,
@@ -419,10 +446,9 @@ def build_deforamble_transformer(args):
         dropout=args.dropout,
         activation="relu",
         return_intermediate_dec=True,
-        num_feature_levels=args.num_feature_levels,
+        num_feature_levels=num_feature_levels,
         dec_n_points=args.dec_n_points,
         enc_n_points=args.enc_n_points,
         two_stage=args.two_stage,
-        two_stage_num_proposals=args.num_queries)
-
-
+        two_stage_num_proposals=args.num_queries,
+        multi_frame_attention_separate_encoder=args.multi_frame_attention and args.multi_frame_attention_separate_encoder)

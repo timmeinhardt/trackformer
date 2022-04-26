@@ -7,8 +7,7 @@ from track import ex
 
 
 if __name__ == "__main__":
-    # general_tracker_cfg = {'public_detections': False, 'reid_sim_only': True, 'reid_greedy_matching': True}
-    general_tracker_cfg = {'public_detections': False}
+
 
     # configs = [
     #     {'dataset_name': ["MOT17-02-FRCNN", "MOT17-10-FRCNN", "MOT17-13-FRCNN"],
@@ -36,26 +35,38 @@ if __name__ == "__main__":
     #      'obj_detect_checkpoint_file': '/storage/user/meinhard/fair_track/models/mot17_train_7_no_pretrain_deformable/checkpoint_best_BBOX_AP_IoU_0_50-0_95.pth'},
     # ]
 
+    # dataset_name = ["MOT17-02-FRCNN", "MOT17-04-FRCNN", "MOT17-05-FRCNN", "MOT17-09-FRCNN", "MOT17-10-FRCNN", "MOT17-11-FRCNN", "MOT17-13-FRCNN"]
+
+    # general_tracker_cfg = {'public_detections': False, 'reid_sim_only': True, 'reid_greedy_matching': False}
+    general_tracker_cfg = {'public_detections': 'min_iou_0_5'}
+    # general_tracker_cfg = {'public_detections': False}
+
+    # dataset_name = 'MOT17-TRAIN-FRCNN'
+    dataset_name = 'MOT17-TRAIN-ALL'
+    # dataset_name = 'MOT20-TRAIN'
+
     configs = [
-        {'dataset_name': ["MOT17-02-FRCNN", "MOT17-04-FRCNN", "MOT17-05-FRCNN", "MOT17-09-FRCNN", "MOT17-10-FRCNN", "MOT17-11-FRCNN", "MOT17-13-FRCNN"],
+        {'dataset_name': dataset_name,
+
          'frame_range': {'start': 0.5},
-         'obj_detect_checkpoint_file': '/storage/user/meinhard/fair_track/models/mot_crowdhuman_num_queries_500_batch_size=2_num_gpus_7_num_classes_20_AP_det_overflow_boxes_True_prev_frame_rnd_augs_0_2_uniform_false_negative_prob_num_classes_20_multi_frame_hidden_dim_288_sep_encoders_batch_queries_lr_drop_10/checkpoint_epoch_35.pth'},
+         'obj_detect_checkpoint_file': '/storage/user/meinhard/fair_track/models/mot_mot17_train_cross_val_frame_0_0_to_0_5_coco_pretrained_num_queries_500_batch_size=2_num_gpus_7_num_classes_20_AP_det_overflow_boxes_True_prev_frame_rnd_augs_0_2_uniform_false_negative_prob_multi_frame_hidden_dim_288_sep_encoders_batch_queries/checkpoint_epoch_50.pth'},
     ]
 
     tracker_param_grids = {
-        # 'detection_obj_score_thresh': [0.3, 0.4, 0.5, 0.6, 0.7],
-        # 'track_obj_score_thresh': [0.4, 0.5, 0.6, 0.7, 0.8],
+        # 'detection_obj_score_thresh': [0.3, 0.4, 0.5, 0.6],
+        # 'track_obj_score_thresh': [0.3, 0.4, 0.5, 0.6],
         'detection_obj_score_thresh': [0.4],
         'track_obj_score_thresh': [0.4],
-        'detection_nms_thresh': [0.95, 0.9],
-        'track_nms_thresh': [0.95, 0.9],
+        # 'detection_nms_thresh': [0.95, 0.9, 0.0],
+        # 'track_nms_thresh': [0.95, 0.9, 0.0],
         # 'detection_nms_thresh': [0.9],
         # 'track_nms_thresh': [0.9],
-        'reid_sim_threshold': [0.0],
-        # 'reid_score_thresh': [0.4, 0.5, 0.6],
+        # 'reid_sim_threshold': [0.0, 0.5, 1.0, 10, 50, 100, 200],
+        'reid_score_thresh': [0.4],
+        # 'inactive_patience': [-1, 5, 10, 20, 30, 40, 50]
+        # 'reid_score_thresh': [0.8],
+        # 'inactive_patience': [-1],
         # 'inactive_patience': [-1, 5, 10]
-        'reid_score_thresh': [0.8],
-        'inactive_patience': [-1]
         }
 
     # compute all config combinations

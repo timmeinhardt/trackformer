@@ -18,7 +18,8 @@ def build_model(args):
         num_classes = 91
     elif args.dataset == 'coco_panoptic':
         num_classes = 250
-    elif args.dataset in ['coco_person', 'mot', 'mot_crowdhuman', 'crowdhuman']:
+    elif args.dataset in ['coco_person', 'mot', 'mot_crowdhuman', 'crowdhuman', 'mot_coco_person']:
+        # num_classes = 91
         num_classes = 20
         # num_classes = 1
     else:
@@ -39,7 +40,7 @@ def build_model(args):
         'track_query_false_positive_prob': args.track_query_false_positive_prob,
         'track_query_false_negative_prob': args.track_query_false_negative_prob,
         'matcher': matcher,
-        'backprop_prev_frame': args.track_backprop_prev_frame}
+        'backprop_prev_frame': args.track_backprop_prev_frame,}
 
     mask_kwargs = {
         'freeze_detr': args.freeze_detr}
@@ -51,6 +52,9 @@ def build_model(args):
         detr_kwargs['num_feature_levels'] = args.num_feature_levels
         detr_kwargs['with_box_refine'] = args.with_box_refine
         detr_kwargs['two_stage'] = args.two_stage
+        detr_kwargs['multi_frame_attention'] = args.multi_frame_attention
+        detr_kwargs['multi_frame_encoding'] = args.multi_frame_encoding
+        detr_kwargs['merge_frame_features'] = args.merge_frame_features
 
         if args.tracking:
             if args.masks:

@@ -7,6 +7,7 @@ Mostly copy-paste from https://github.com/pytorch/vision/blob/13b35ff/references
 import copy
 import random
 from pathlib import Path
+from collections import Counter
 
 import torch
 import torch.nn.functional as F
@@ -23,15 +24,22 @@ class CocoDetection(torchvision.datasets.CocoDetection):
 
     def __init__(self,  img_folder, ann_file, transforms, norm_transforms,
                  return_masks=False, overflow_boxes=False, remove_no_obj_imgs=True,
-                 prev_frame=False, prev_frame_rnd_augs=0.0, prev_prev_frame=False):
+                 prev_frame=False, prev_frame_rnd_augs=0.0, prev_prev_frame=False,
+                 min_num_objects=0):
         super(CocoDetection, self).__init__(img_folder, ann_file)
         self._transforms = transforms
         self._norm_transforms = norm_transforms
         self.prepare = ConvertCocoPolysToMask(return_masks, overflow_boxes)
 
+        annos_image_ids = [
+            ann['image_id'] for ann in self.coco.loadAnns(self.coco.getAnnIds())]
         if remove_no_obj_imgs:
-            self.ids = sorted(list(set(
-                [ann['image_id'] for ann in self.coco.loadAnns(self.coco.getAnnIds())])))
+            self.ids = sorted(list(set(annos_image_ids)))
+
+        if min_num_objects:
+            counter = Counter(annos_image_ids)
+
+            self.ids = [i for i in self.ids if counter[i] >= min_num_objects]
 
         self._prev_frame = prev_frame
         self._prev_frame_rnd_augs = prev_frame_rnd_augs
@@ -328,6 +336,7 @@ def build(image_set, args, mode='instances'):
         return_masks=args.masks,
         prev_frame=args.tracking,
         prev_frame_rnd_augs=prev_frame_rnd_augs,
-        prev_prev_frame=args.track_prev_prev_frame)
+        prev_prev_frame=args.track_prev_prev_frame,
+        min_num_objects=args.coco_min_num_objects)
 
     return dataset
