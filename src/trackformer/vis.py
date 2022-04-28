@@ -249,7 +249,7 @@ def build_visualizers(args: dict, train_loss_names: list):
     visualizers['train'] = {}
     visualizers['val'] = {}
 
-    if args.eval_only or args.no_vis:
+    if args.eval_only or args.no_vis or not args.vis_server:
         return visualizers
 
     env_name = str(args.output_dir).split('/')[-1]

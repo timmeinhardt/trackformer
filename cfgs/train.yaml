@@ -1,6 +1,6 @@
-lr: 0.0001
+lr: 0.0002
 lr_backbone_names: ['backbone.0']
-lr_backbone: 0.00001
+lr_backbone: 0.00002
 lr_linear_proj_names: ['reference_points', 'sampling_offsets']
 lr_linear_proj_mult: 0.1
 lr_track: 0.0001
@@ -21,7 +21,7 @@ freeze_detr: false
 load_mask_head_from_model: null
 # Backbone
 # Name of the convolutional backbone to use. ('resnet50', 'resnet101')
-backbone: resnet101
+backbone: resnet50
 # If true, we replace stride with dilation in the last convolutional block (DC5)
 dilation: false
 # Type of positional embedding to use on top of the image features. ('sine', 'learned')
@@ -57,6 +57,7 @@ track_prev_prev_frame: False
 track_backprop_prev_frame: False
 track_query_false_positive_prob: 0.1
 track_query_false_negative_prob: 0.4
+# only for vanilla DETR
 track_query_false_positive_eos_weight: true
 track_attention: false
 multi_frame_attention: false
@@ -129,10 +130,9 @@ save_model_interval: 5
 world_size: 1
 # url used to set up distributed training
 dist_url: env://
-# visualization parameters
-# Visdom port.
+# Visdom params
+# vis_server: http://localhost
+vis_server: ''
 vis_port: 8090
-# Visdom server URL.
-vis_server: http://localhost
-no_vis: false
 vis_and_log_interval: 50
+no_vis: false

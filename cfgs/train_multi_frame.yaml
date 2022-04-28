@@ -1,6 +1,5 @@
 num_queries: 500
-overflow_boxes: true
-with_box_refine: true
+hidden_dim: 288
 multi_frame_attention: true
 multi_frame_encoding: true
 multi_frame_attention_separate_encoder: true

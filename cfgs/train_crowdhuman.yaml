@@ -1,0 +1,6 @@
+dataset: mot_crowdhuman
+crowdhuman_train_split: train_val
+train_split: null
+val_split: mot17_train_cross_val_frame_0_5_to_1_0_coco
+epochs: 80
+lr_drop: 50

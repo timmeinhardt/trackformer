@@ -1,22 +1,22 @@
 # Train TrackFormer
 
-We provide the code as well as intermediate models of our entire training pipeline for multiple datasets. Monitoring of the training/evaluation progress is possible via command line as well as [Visdom](https://github.com/fossasia/visdom.git). For the latter, a Visdom server must be running at `vis_port=8090` and `vis_server=http://localhost` (see `cfgs/train.yaml`). To deactivate Visdom logging run a training with the `no_vis=True` flag.
+We provide the code as well as intermediate models of our entire training pipeline for multiple datasets. Monitoring of the training/evaluation progress is possible via command line as well as [Visdom](https://github.com/fossasia/visdom.git). For the latter, a Visdom server must be running at `vis_port` and `vis_server` (see `cfgs/train.yaml`). We set `vis_server=''` by default to deactivate Visdom logging. To deactivate Visdom logging with set parameters, you can run a training with the `no_vis=True` flag.
 
 <div align="center">
     <img src="../docs/visdom.gif" alt="Snakeboard demo" width="600"/>
 </div>
 
-The settings for each dataset are specified in the respective configuration files, e.g., `cfgs/train_crowdhuman.yaml`.
+The settings for each dataset are specified in the respective configuration files, e.g., `cfgs/train_crowdhuman.yaml`. The following train commands produced the pretrained model files mentioned in [docs/INSTALL.md](INSTALL.md).
 
 ## CrowdHuman pre-training
 
 ```
 python src/train.py with \
-    deformable \
-    tracking \
     crowdhuman \
-    full_res \
-    output_dir=models/crowdhuman_train_val_deformable_v2 \
+    deformable \
+    multi_frame \
+    tracking \
+    output_dir=models/crowdhuman_deformable_multi_frame \
 ```
 
 ## MOT17
@@ -25,33 +25,42 @@ python src/train.py with \
 
 ```
 python src/train.py with \
+    mot17_crowdhuman \
     deformable \
+    multi_frame \
     tracking \
-    mot17 \
-    full_res \
-    resume=models/crowdhuman_train_val_deformable/checkpoint.pth \
-    output_dir=models/mot17_train_deformable_private_v2 \
+    output_dir=models/mot17_crowdhuman_deformable_multi_frame \
 ```
 
 #### Public detections
 
 ```
 python src/train.py with \
-    deformable \
-    tracking \
     mot17 \
-    full_res \
-    resume=models/r50_deformable_detr-checkpoint.pth \
-    output_dir=models/mot17_train_deformable_public_v2 \
-    epochs=40 \
-    lr_drop=10
+    deformable \
+    multi_frame \
+    tracking \
+    output_dir=models/mot17_deformable_multi_frame \
+```
+
+## MOT20
+
+#### Private detections
+
+```
+python src/train.py with \
+    mot20_crowdhuman \
+    deformable \
+    multi_frame \
+    tracking \
+    output_dir=models/mot20_crowdhuman_deformable_multi_frame \
 ```
 
 ## MOTS20
 
-For our MOTS20 test set submission, we finetune a MOT17 private detection model without deformable attention, i.e., vanilla DETR, which was pre-trained on the CrowdHuman dataset. The finetuning itself conists of two training steps: (i) the original DETR panoptic segmentation head on the COCO person segmentation data and (ii) the entire TrackFormer model (including segmentation head) on the MOTS20 training set.
+For our MOTS20 test set submission, we finetune a MOT17 private detection model without deformable attention, i.e., vanilla DETR, which was pre-trained on the CrowdHuman dataset. The finetuning itself conists of two training steps: (i) the original DETR panoptic segmentation head on the COCO person segmentation data and (ii) the entire TrackFormer model (including segmentation head) on the MOTS20 training set. At this point, we only provide the final model files in [docs/INSTALL.md](INSTALL.md).
 
-```
+<!-- ```
 python src/train.py with \
     tracking \
     coco_person_masks \
@@ -62,12 +71,12 @@ python src/train.py with \
 python src/train.py with \
     tracking \
     mots20 \
-    output_dir=models/mots20_train_masks_v2 \
-```
+    output_dir=models/mots20_train_masks \
+``` -->
 
-### Ablation studies
+<!-- ### Ablation studies
 
-Will be added after acceptance of the paper.
+Will be added after acceptance of the paper. -->
 
 ## Custom Dataset
 
@@ -89,30 +98,43 @@ In the case of a multi-object tracking dataset, the original COCO annotations st
 
 ```
 python src/train.py with \
+    mot17 \
     deformable \
     tracking \
-    mot17 \
     full_res \
-    resume=models/mot17_train_deformable_private/checkpoint.pth \
-    output_dir=models/custom_dataset_train_deformable \
+    resume=models/mot17_crowdhuman_deformable_trackformer/checkpoint_epoch_40.pth \
+    output_dir=models/custom_dataset_deformable \
     mot_path=data/custom_dataset \
     train_split=train \
     val_split=val \
     epochs=20 \
 ```
 
-## Run with Submitit
+## Run with multipe GPUs
 
-Furthermore, we provide a script for starting Slurm jobs with [submitit](https://github.com/facebookincubator/submitit). This includes a convenient command line interface for Slurm options as well as preemption and resuming capabilities. The aforementioned CrowdHuman pre-training can be executed on 8 x 16 GB GPUs with the following command:
+All reported results are obtained by training with a batch size of 2 and 7 GPUs, i.e., an effective batch size of 14. If you have less GPUs at your disposal, adjust the learning rates accordingly. To start the CrowdHuman pre-training with 7 GPUs execute:
+
+```
+python -m torch.distributed.launch --nproc_per_node=7 --use_env src/train.py with \
+    crowdhuman \
+    deformable \
+    multi_frame \
+    tracking \
+    output_dir=models/crowdhuman_deformable_multi_frame \
+```
+
+## Run SLURM jobs with Submitit
+
+Furthermore, we provide a script for starting Slurm jobs with [submitit](https://github.com/facebookincubator/submitit). This includes a convenient command line interface for Slurm options as well as preemption and resuming capabilities. The aforementioned CrowdHuman pre-training can be executed on 7 x 32 GB GPUs with the following command:
 
 ```
 python src/run_with_submitit.py with \
-    num_gpus=8 \
-    vram=16GB \
+    num_gpus=7 \
+    vram=32GB \
     cluster=slurm \
-    train.deformable \
-    train.tracking \
     train.crowdhuman \
-    train.full_res \
-    train.output_dir=models/crowdhuman_train_val_deformable_v2 \
+    train.deformable \
+    train.trackformer \
+    train.tracking \
+    train.output_dir=models/crowdhuman_train_val_deformable \
 ```

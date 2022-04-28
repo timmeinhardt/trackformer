@@ -16,18 +16,30 @@
 3. Download and unpack datasets in the `data` directory:
 
     1. [MOT17](https://motchallenge.net/data/MOT17/):
+
         ```
         wget https://motchallenge.net/data/MOT17.zip
         unzip MOT17.zip
         python src/generate_coco_from_mot.py
         ```
-    2. (Optional) [MOTS20](https://motchallenge.net/data/MOTS/):
+
+    2. (Optional) [MOT20](https://motchallenge.net/data/MOT20/):
+
+        ```
+        wget https://motchallenge.net/data/MOT20.zip
+        unzip MOT20.zip
+        python src/generate_coco_from_mot.py --mot20
+        ```
+
+    3. (Optional) [MOTS20](https://motchallenge.net/data/MOTS/):
+
         ```
         wget https://motchallenge.net/data/MOTS.zip
         unzip MOTS.zip
         python src/generate_coco_from_mot.py --mots
         ```
-    2. (Optional) [CrowdHuman](https://www.crowdhuman.org/download.html):
+
+    4. (Optional) [CrowdHuman](https://www.crowdhuman.org/download.html):
 
         1. Create a `CrowdHuman` and `CrowdHuman/annotations` directory.
         2. Download and extract the `train` and `val` datasets including their corresponding `*.odgt` annotation file into the `CrowdHuman` directory.
@@ -50,9 +62,10 @@
             ~~~
 
 3. Download and unpack pretrained TrackFormer model files in the `models` directory:
+
     ```
-    wget https://vision.in.tum.de/webshare/u/meinhard/trackformer_models.zip
-    unzip trackformer_models.zip
+    wget https://vision.in.tum.de/webshare/u/meinhard/trackformer_models_v1.zip
+    unzip trackformer_models_v1.zip
     ```
 
 4. (optional) The evaluation of MOTS20 metrics requires two steps:

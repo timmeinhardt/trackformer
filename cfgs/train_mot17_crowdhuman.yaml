@@ -1,12 +1,13 @@
-dataset: mot
+dataset: mot_crowdhuman
 
+crowdhuman_train_split: train_val
 train_split: mot17_train_coco
 val_split: mot17_train_cross_val_frame_0_5_to_1_0_coco
 
 mot_path_train: data/MOT17
 mot_path_val: data/MOT17
 
-resume: models/r50_deformable_detr_plus_iterative_bbox_refinement-checkpoint_hidden_dim_288.pth
+resume: models/crowdhuman_deformable_trackformer/checkpoint_epoch_80.pth
 
-epochs: 50
+epochs: 40
 lr_drop: 10

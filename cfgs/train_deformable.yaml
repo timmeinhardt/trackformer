@@ -1,5 +1,11 @@
 deformable: true
-backbone: resnet50
 num_feature_levels: 4
 num_queries: 300
 dim_feedforward: 1024
+focal_loss: true
+focal_alpha: 0.25
+focal_gamma: 2
+cls_loss_coef: 2.0
+set_cost_class: 2.0
+overflow_boxes: true
+with_box_refine: true
