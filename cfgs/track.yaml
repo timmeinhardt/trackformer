@@ -2,7 +2,7 @@ output_dir: null
 verbose: false
 seed: 666
 
-obj_detect_checkpoint_file: models/mot17_train_deformable_private/checkpoint.pth
+obj_detect_checkpoint_file: models/mot17_crowdhuman_deformable_multi_frame/checkpoint_epoch_40.pth
 
 interpolate: False
 # if available load tracking results and only evaluate

@@ -76,7 +76,7 @@ python src/track.py with \
 ```
 
 <center>
-| MOT17     | MOTA         | IDF1           |       MT     |     ML     |     FP       |     FN              |  ID SW.      |
+| MOT20     | MOTA         | IDF1           |       MT     |     ML     |     FP       |     FN              |  ID SW.      |
 |  :---:    | :---:        |     :---:      |    :---:     | :---:      |    :---:     |   :---:             |  :---:       |
 | **Train** |     XX       |     XX         |    XXX       | XXX        |     XXXXX    |     XXXX            |  XXXX        |
 | **Test**  |     68.6     |     65.7       |    666       | 181        |     20348    |     140373          |  1532        |
