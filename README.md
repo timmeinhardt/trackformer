@@ -43,10 +43,12 @@ python src/track.py with reid
 ```
 
 <center>
+
 | MOT17     | MOTA         | IDF1           |       MT     |     ML     |     FP       |     FN              |  ID SW.      |
 |  :---:    | :---:        |     :---:      |    :---:     | :---:      |    :---:     |   :---:             |  :---:       |
-| **Train** |     XX       |       XX       |     XX       |  XX        |        XX    |        XX           |    XX        |
+| **Train** |     74.2     |     71.7       |     849      | 177        |      7431    |      78057          |  1449        |
 | **Test**  |     74.1     |     68.0       |    1113      | 246        |     34602    |     108777          |  2829        |
+
 </center>
 
 #### Public detections (DPM, FRCNN, SDP)
@@ -54,15 +56,17 @@ python src/track.py with reid
 ```
 python src/track.py with \
     reid \
-    public_detections=min_iou_0_5 \
+    tracker_cfg.public_detections=min_iou_0_5 \
     obj_detect_checkpoint_file=models/mot17_deformable_multi_frame/checkpoint_epoch_50.pth
 ```
 
 <center>
+
 | MOT17     | MOTA         | IDF1           |       MT     |     ML     |     FP       |     FN              |  ID SW.      |
 |  :---:    | :---:        |     :---:      |    :---:     | :---:      |    :---:     |   :---:             |  :---:       |
-| **Train** |     XX       |     XX         |    XXX       | XXX        |     XXXXX    |     XXXX            |  XXXX        |
+| **Train** |     64.6     |     63.7       |    621       | 675        |     4827     |     111958          |  2556        |
 | **Test**  |     62.3     |     57.6       |    688       | 638        |     16591    |     192123          |  4018        |
+
 </center>
 
 ### MOT20
@@ -72,14 +76,17 @@ python src/track.py with \
 ```
 python src/track.py with \
     reid \
+    dataset_name=MOT20-ALL \
     obj_detect_checkpoint_file=models/mot20_crowdhuman_deformable_multi_frame/checkpoint_epoch_50.pth
 ```
 
 <center>
+
 | MOT20     | MOTA         | IDF1           |       MT     |     ML     |     FP       |     FN              |  ID SW.      |
 |  :---:    | :---:        |     :---:      |    :---:     | :---:      |    :---:     |   :---:             |  :---:       |
-| **Train** |     XX       |     XX         |    XXX       | XXX        |     XXXXX    |     XXXX            |  XXXX        |
-| **Test**  |     68.6     |     65.7       |    666       | 181        |     20348    |     140373          |  1532        |
+| **Train** |     81.0     |     73.3       |    1540      | 124        |     20807    |     192665          |  1961        |
+| **Test**  |     68.6     |     65.7       |     666      | 181        |     20348    |     140373          |  1532        |
+
 </center>
 
 ### MOTS20
