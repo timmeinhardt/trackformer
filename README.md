@@ -100,10 +100,12 @@ python src/track.py with \
 Our tracking script only applies MOT17 metrics evaluation but outputs MOTS20 mask prediction files. To evaluate these download the official [MOTChallengeEvalKit](https://github.com/dendorferpatrick/MOTChallengeEvalKit).
 
 <center>
+
 | MOTS20    | sMOTSA         | IDF1           |       FP     |     FN     |     IDs      |
-|  :---:    | :---:        |     :---:      |    :---:     | :---:      |    :---:     |
-| **Train** |     --       |     --         |    --        |   --       |     --       |
-| **Test**  |     54.9       |     63.6         |    2233        | 7195         |     278       |
+|  :---:    | :---:          |     :---:      |    :---:     | :---:      |    :---:     |
+| **Train** |     --         |     --         |    --        |   --       |     --       |
+| **Test**  |     54.9       |     63.6       |    2233      | 7195       |     278      |
+
 </center>
 
 ### Demo
