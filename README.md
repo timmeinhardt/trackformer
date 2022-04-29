@@ -133,8 +133,7 @@ If you use this software in your research, please cite our publication:
 @InProceedings{meinhardt2021trackformer,
     title={TrackFormer: Multi-Object Tracking with Transformers},
     author={Tim Meinhardt and Alexander Kirillov and Laura Leal-Taixe and Christoph Feichtenhofer},
-    year={2021},
-    eprint={2101.02702},
-    archivePrefix={arXiv},
+    booktitle={IEEE Conf. Comput. Vis. Pattern Recog.},
+    year={2022},
 }
 ```

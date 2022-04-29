@@ -100,11 +100,12 @@ In the case of a multi-object tracking dataset, the original COCO annotations st
 python src/train.py with \
     mot17 \
     deformable \
+    multi_frame \
     tracking \
-    full_res \
     resume=models/mot17_crowdhuman_deformable_trackformer/checkpoint_epoch_40.pth \
     output_dir=models/custom_dataset_deformable \
-    mot_path=data/custom_dataset \
+    mot_path_train=data/custom_dataset \
+    mot_path_val=data/custom_dataset \
     train_split=train \
     val_split=val \
     epochs=20 \
