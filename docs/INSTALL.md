@@ -6,12 +6,19 @@
     cd trackformer
     ```
 
-2. Install packages for Python 3.7:
+2. Install packages for your Python version:
 
-    1. `pip3 install -r requirements.txt`
-    2. Install PyTorch 1.5 and torchvision 0.6 from [here](https://pytorch.org/get-started/previous-versions/#v150).
-    3. Install pycocotools (with fixed ignore flag): `pip3 install -U 'git+https://github.com/timmeinhardt/cocoapi.git#subdirectory=PythonAPI'`
-    5. Install MultiScaleDeformableAttention package: `python src/trackformer/models/ops/setup.py build --build-base=src/trackformer/models/ops/ install`
+    1. `pip install -r requirements.txt`
+    2. Install PyTorch and torchvision from [here](https://pytorch.org/).
+    3. Install pycocotools: 
+    ```
+    pip install pycocotools
+    ```
+    5. Install MultiScaleDeformableAttention package: 
+    ```
+    pip uninstall MultiScaleDeformableAttention
+    python src/trackformer/models/ops/setup.py build --build-base=src/trackformer/models/ops/ install
+    ```
 
 3. Download and unpack datasets in the `data` directory:
 
