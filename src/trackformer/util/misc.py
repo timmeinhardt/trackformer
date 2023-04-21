@@ -20,10 +20,34 @@ import torch.nn.functional as F
 import torchvision
 from torch import Tensor
 from visdom import Visdom
+    
+    
+def _new_empty_tensor(x, shape):
+    # type: (Tensor, List[int]) -> Tensor
+    """
+    Arguments:
+        input (Tensor): input tensor
+        shape List[int]: the new empty tensor shape
 
-if float(torchvision.__version__[:3]) < 0.7:
-    from torchvision.ops import _new_empty_tensor
-    from torchvision.ops.misc import _output_size
+    Returns:
+        output (Tensor)
+    """
+    return torch.ops.torchvision._new_empty_tensor_op(x, shape)
+
+
+def _output_size(dim, input, size, scale_factor):
+    # type: (int, Tensor, Optional[List[int]], Optional[float]) -> List[int]
+    assert dim == 2
+    _check_size_scale_factor(dim, size, scale_factor)
+    if size is not None:
+        return size
+    # if dim is not 2 or scale_factor is iterable use _ntuple instead of concat
+    assert scale_factor is not None and isinstance(scale_factor, (int, float))
+    scale_factors = [scale_factor, scale_factor]
+    # math.floor might return float in py2.7
+    return [
+        int(math.floor(input.size(i + 2) * scale_factors[i])) for i in range(dim)
+    ]
 
 
 class SmoothedValue(object):
