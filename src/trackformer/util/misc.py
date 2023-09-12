@@ -21,7 +21,7 @@ import torchvision
 from torch import Tensor
 from visdom import Visdom
 
-if float(torchvision.__version__[:3]) < 0.7:
+if int(torchvision.__version__.split('.')[0]) <= 0 and int(torchvision.__version__.split('.')[1]) < 7:
     from torchvision.ops import _new_empty_tensor
     from torchvision.ops.misc import _output_size
 
@@ -470,7 +470,7 @@ def interpolate(input, size=None, scale_factor=None, mode="nearest", align_corne
     This will eventually be supported natively by PyTorch, and this
     class can go away.
     """
-    if float(torchvision.__version__[:3]) < 0.7:
+    if int(torchvision.__version__.split('.')[0]) <= 0 and int(torchvision.__version__.split('.')[1]) < 7:
         if input.numel() > 0:
             return torch.nn.functional.interpolate(
                 input, size, scale_factor, mode, align_corners
